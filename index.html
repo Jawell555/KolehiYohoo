@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kolehiyohoo - University Finder</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app" v-cloak>
+
+  <!-- Login Page -->
+  <div v-if="activePage === 'login'" id="loginPage" class="page active">
+    <div class="login-container">
+      <div class="brand">
+        <h1>Kolehiyohoo</h1>
+        <p>Your guide to finding the right college.</p>
+      </div>
+
+      <div class="login-card">
+        <!-- Choose Account Type -->
+        <div v-if="!isRoleChosen" id="roleSelectView">
+          <h2>Welcome</h2>
+          <p class="subtitle">Choose your account type to continue</p>
+          <div class="account-options">
+            <button type="button" class="account-btn" @click="selectRole('student')">
+              <div class="account-btn-icon">🎓</div>
+              <div class="account-btn-text">
+                <span>Student</span>
+                <small>Find schools and explore courses</small>
+              </div>
+            </button>
+            <button type="button" class="account-btn" @click="selectRole('institution')">
+              <div class="account-btn-icon">🏛️</div>
+              <div class="account-btn-text">
+                <span>School / Institution</span>
+                <small>Manage offerings and institution profile</small>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Auth Form -->
+        <div v-else id="authFormView">
+          <button type="button" class="auth-back-btn" @click="showAccountSelect">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Change account type
+          </button>
+
+          <div class="auth-header">
+            <span class="auth-role-badge">{{ currentRole === 'institution' ? 'School / Institution' : 'Student' }}</span>
+            <h2>
+              <template v-if="currentRole === 'institution' && currentAuthMode === 'signup'">Contact Us for Account Creation</template>
+              <template v-else-if="currentAuthMode === 'signup'">Create an account</template>
+              <template v-else>Welcome back</template>
+            </h2>
+            <p class="subtitle">
+              <template v-if="currentRole === 'institution' && currentAuthMode === 'signup'">Submit your details for personal institutional verification.</template>
+              <template v-else-if="currentRole === 'institution' && currentAuthMode === 'login'">Sign in to manage your school portal</template>
+              <template v-else-if="currentAuthMode === 'signup'">Sign up to explore and save universities</template>
+              <template v-else>Sign in to continue to your student dashboard</template>
+            </p>
+          </div>
+
+          <!-- Auth Tabs -->
+          <div class="auth-tabs">
+            <button type="button" class="auth-tab" :class="{ active: currentAuthMode === 'login' }" @click="setAuthMode('login')">Log In</button>
+            <button type="button" class="auth-tab" :class="{ active: currentAuthMode === 'signup' }" @click="setAuthMode('signup')">
+              {{ currentRole === 'institution' ? 'Request Account' : 'Sign Up' }}
+            </button>
+          </div>
+
+          <!-- Google Sign In -->
+          <div v-if="!(currentRole === 'institution' && currentAuthMode === 'signup')" id="googleAuthSection">
+            <button type="button" class="google-btn" @click="handleGoogleAuth">
+              <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+                <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/>
+                <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/>
+                <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"/>
+                <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/>
+              </svg>
+              <span>{{ currentAuthMode === 'signup' ? 'Sign up with Google' : 'Continue with Google' }}</span>
+            </button>
+
+            <div class="auth-divider">
+              <span>or continue with email</span>
+            </div>
+          </div>
+
+          <!-- Student Login -->
+          <form v-if="currentRole === 'student' && currentAuthMode === 'login'" @submit.prevent="handleStudentLogin">
+            <div class="form-group">
+              <label for="studentLoginEmail">Email Address</label>
+              <input id="studentLoginEmail" type="email" v-model="loginForm.email" placeholder="name@example.com" required autocomplete="email">
+            </div>
+
+            <div class="form-group">
+              <div class="form-label-row">
+                <label for="studentLoginPassword">Password</label>
+                <a href="#" class="forgot-link" @click.prevent="handleForgotPassword">Forgot Password?</a>
+              </div>
+              <input id="studentLoginPassword" type="password" v-model="loginForm.password" placeholder="••••••••" required autocomplete="current-password">
+            </div>
+
+            <button type="submit" class="primary-btn auth-submit-btn">Log In</button>
+
+            <div class="auth-footer">
+              <span>Don't have an account?</span>
+              <button type="button" class="auth-switch-link" @click="setAuthMode('signup')">Sign up</button>
+            </div>
+          </form>
+
+          <!-- Student Sign Up -->
+          <form v-if="currentRole === 'student' && currentAuthMode === 'signup'" @submit.prevent="handleStudentSignup">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="studentFirstName">First Name</label>
+                <input id="studentFirstName" type="text" v-model="signupForm.firstName" placeholder="Juan" required autocomplete="given-name">
+              </div>
+              <div class="form-group">
+                <label for="studentLastName">Last Name</label>
+                <input id="studentLastName" type="text" v-model="signupForm.lastName" placeholder="dela Cruz" required autocomplete="family-name">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="studentSignupEmail">Email Address</label>
+              <input id="studentSignupEmail" type="email" v-model="signupForm.email" placeholder="name@example.com" required autocomplete="email">
+            </div>
+
+            <div class="form-group">
+              <label for="studentSignupPassword">Password</label>
+              <input id="studentSignupPassword" type="password" v-model="signupForm.password" placeholder="••••••••" required autocomplete="new-password">
+            </div>
+
+            <div class="form-group">
+              <label for="studentConfirmPassword">Confirm Password</label>
+              <input id="studentConfirmPassword" type="password" v-model="signupForm.confirmPassword" placeholder="••••••••" required autocomplete="new-password">
+            </div>
+
+            <button type="submit" class="primary-btn auth-submit-btn">Create Account</button>
+
+            <div class="auth-footer">
+              <span>Already have an account?</span>
+              <button type="button" class="auth-switch-link" @click="setAuthMode('login')">Log In</button>
+            </div>
+          </form>
+
+          <!-- Institution Login -->
+          <form v-if="currentRole === 'institution' && currentAuthMode === 'login'" @submit.prevent="handleInstitutionLogin">
+            <div class="form-group">
+              <label for="instLoginEmail">Institutional Email Address</label>
+              <input id="instLoginEmail" type="email" v-model="loginForm.email" placeholder="admissions@school.edu.ph" required autocomplete="email">
+            </div>
+
+            <div class="form-group">
+              <div class="form-label-row">
+                <label for="instLoginPassword">Password</label>
+                <a href="#" class="forgot-link" @click.prevent="handleForgotPassword">Forgot Password?</a>
+              </div>
+              <input id="instLoginPassword" type="password" v-model="loginForm.password" placeholder="••••••••" required autocomplete="current-password">
+            </div>
+
+            <button type="submit" class="primary-btn auth-submit-btn">Log In</button>
+
+            <div class="auth-footer">
+              <span>Need an institution account?</span>
+              <button type="button" class="auth-switch-link" @click="setAuthMode('signup')">Request access</button>
+            </div>
+          </form>
+
+          <!-- Institution Sign Up -->
+          <form v-if="currentRole === 'institution' && currentAuthMode === 'signup'" @submit.prevent="handleInstitutionVerificationSubmit">
+            <div class="verify-notice-banner">
+              <div class="verify-notice-icon">🛡️</div>
+              <div class="verify-notice-text">
+                <strong>Personal Verification Required</strong>
+                <p>We personally verify every institution before creating your account. Send us your details and our team will get in touch.</p>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="instSchoolName">Institution / School Name</label>
+              <input id="instSchoolName" type="text" v-model="institutionForm.schoolName" placeholder="e.g., Manila Central University" required>
+            </div>
+
+            <div class="form-group">
+              <label for="instRepName">Representative Name & Title</label>
+              <input id="instRepName" type="text" v-model="institutionForm.repName" placeholder="e.g., Dr. Maria Santos (Admissions Director)" required>
+            </div>
+
+            <div class="form-group">
+              <label for="instEmail">Official Institutional Email</label>
+              <input id="instEmail" type="email" v-model="institutionForm.email" placeholder="e.g., admissions@mcu.edu.ph" required>
+            </div>
+
+            <div class="form-group">
+              <label for="instPhone">Contact Number</label>
+              <input id="instPhone" type="tel" v-model="institutionForm.phone" placeholder="e.g., 0917-123-4567 or (02) 8123-4567" required>
+            </div>
+
+            <div class="form-group">
+              <label for="instNotes">Campus / Inquiry Notes <span>(Optional)</span></label>
+              <input id="instNotes" type="text" v-model="institutionForm.notes" placeholder="e.g., Main Campus, Caloocan City">
+            </div>
+
+            <button type="submit" class="primary-btn auth-submit-btn">Send Verification Request</button>
+
+            <div class="auth-footer">
+              <span>Already verified?</span>
+              <button type="button" class="auth-switch-link" @click="setAuthMode('login')">Log In</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Student Dashboard -->
+  <div v-else-if="activePage === 'student'" id="studentPage" class="page active">
+    <!-- Navigation -->
+    <header class="navbar">
+      <div class="nav-brand">Kolehiyohoo</div>
+      <div class="nav-links">
+        <a href="#" @click.prevent="showSection('homeSection')">Home</a>
+        <a href="#" @click.prevent="showSection('schoolsSection')">Find Schools</a>
+        <a href="#" @click.prevent="showSection('savedSection')">
+          Saved Schools ({{ savedSchools.length }})
+        </a>
+        <span class="nav-role-badge">
+          {{ currentRole === 'institution' ? '🏛️ Institution' : '🎓 ' + (currentUser?.name || 'Student') }}
+        </span>
+        <a href="#" @click.prevent="logout">Logout</a>
+      </div>
+    </header>
+
+    <main>
+      <!-- Home Section -->
+      <section v-show="activeSection === 'homeSection'" id="homeSection" class="section active-section">
+        <div v-if="currentRole === 'institution'" class="institution-banner">
+          <div class="banner-icon">🏛️</div>
+          <div class="banner-text">
+            <strong>School / Institution Preview Mode</strong>
+            <p>You are signed in as an institutional partner. Course listings and institution management are in preview.</p>
+          </div>
+        </div>
+
+        <div class="hero">
+          <div class="hero-text">
+            <p class="eyebrow">STUDENT DASHBOARD</p>
+            <h1>Find the right school<br>for your future.</h1>
+            <p>Discover colleges and universities based on the degree program you want to pursue.</p>
+            <button class="primary-btn" @click="showSection('schoolsSection')">Find a School</button>
+          </div>
+          <div class="hero-illustration">
+            <div class="illustration-card">
+              <div class="illustration-icon">+</div>
+              <h3>Explore Your Options</h3>
+              <p>Courses, schools, and possible routes in one place.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="quick-info">
+          <div class="info-box">
+            <h3>Search by Degree</h3>
+            <p>Find schools offering your preferred program.</p>
+          </div>
+          <div class="info-box">
+            <h3>Compare Schools</h3>
+            <p>View basic information about your choices.</p>
+          </div>
+          <div class="info-box">
+            <h3>Check Routes</h3>
+            <p>Explore possible travel routes to campus.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- School Finder -->
+      <section v-show="activeSection === 'schoolsSection'" id="schoolsSection" class="section active-section">
+        <div class="section-heading">
+          <p class="eyebrow">SCHOOL FINDER</p>
+          <h1>Find schools by program</h1>
+          <p>Choose a degree program to see schools that offer it.</p>
+        </div>
+
+        <div class="search-panel">
+          <!-- Course Dropdown -->
+          <div class="form-group">
+            <label for="courseSearchInput">Preferred Course / Program</label>
+            <div class="course-dropdown-wrapper">
+              <div class="course-input-container">
+                <input
+                  id="courseSearchInput"
+                  type="text"
+                  v-model="searchCourse"
+                  placeholder="Search or select course (e.g., BSIT, BAComm)..."
+                  @focus="isCourseDropdownOpen = true"
+                  @input="onCourseInput"
+                  autocomplete="off"
+                >
+                <div class="course-input-actions">
+                  <button
+                    v-if="searchCourse"
+                    type="button"
+                    class="course-clear-btn"
+                    @click="clearCourseSearch"
+                    title="Clear course"
+                  >×</button>
+                  <button
+                    type="button"
+                    class="course-arrow-btn"
+                    :class="{ open: isCourseDropdownOpen }"
+                    @click.stop="toggleCourseDropdown"
+                    title="Toggle dropdown"
+                  >▼</button>
+                </div>
+              </div>
+
+              <!-- 3-row visible scrollable dropdown menu -->
+              <div v-if="isCourseDropdownOpen" class="course-dropdown-menu">
+                <div
+                  v-for="course in filteredCourses"
+                  :key="course.code"
+                  class="course-dropdown-item"
+                  :class="{ selected: searchCourse === course.name }"
+                  @click="selectCourse(course)"
+                >
+                  <span class="course-name">{{ course.name }}</span>
+                  <span class="course-badge">{{ course.code }}</span>
+                </div>
+                <div v-if="filteredCourses.length === 0" class="course-dropdown-empty">
+                  No courses matching your search
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="locationInput">Starting Location <span>(Optional)</span></label>
+            <input
+              id="locationInput"
+              v-model="searchLocation"
+              placeholder="Enter barangay or location"
+              @keyup.enter="searchSchools"
+            >
+          </div>
+
+          <button class="primary-btn search-btn" @click="searchSchools">Search Schools</button>
+        </div>
+
+        <div v-if="hasSearched" class="search-message">{{ searchMessage }}</div>
+
+        <!-- School Results Grid -->
+        <div v-if="hasSearched && matchedSchools.length > 0" class="school-grid">
+          <div v-for="school in matchedSchools" :key="school.id" class="school-card">
+            <div class="school-cover">{{ school.abbreviation }}</div>
+            <div class="school-body">
+              <span class="school-tag">{{ searchCourse ? searchCourse.split(' ')[0] : 'University' }}</span>
+              <h3>{{ school.name }}</h3>
+              <p>{{ school.location }}</p>
+              <p>{{ school.description }}</p>
+              <div class="card-actions">
+                <button class="view-btn" @click="viewSchool(school)">View School</button>
+                <button
+                  class="save-btn"
+                  :class="{ saved: isSchoolSaved(school.id) }"
+                  @click="toggleSave(school.id)"
+                >
+                  {{ isSchoolSaved(school.id) ? 'Saved' : 'Save School' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-else-if="hasSearched && matchedSchools.length === 0" class="empty-state">
+          <h3>No schools found</h3>
+          <p>Try selecting another course from the dropdown or changing your starting location.</p>
+        </div>
+      </section>
+
+      <!-- Saved Schools -->
+      <section v-show="activeSection === 'savedSection'" id="savedSection" class="section active-section">
+        <div class="section-heading">
+          <p class="eyebrow">MY PROFILE</p>
+          <h1>Saved Schools</h1>
+          <p>Keep track of the schools you may want to consider.</p>
+        </div>
+
+        <div v-if="savedSchoolsList.length > 0" class="school-grid">
+          <div v-for="school in savedSchoolsList" :key="school.id" class="school-card">
+            <div class="school-cover">{{ school.abbreviation }}</div>
+            <div class="school-body">
+              <span class="school-tag">Saved</span>
+              <h3>{{ school.name }}</h3>
+              <p>{{ school.location }}</p>
+              <p>{{ school.description }}</p>
+              <div class="card-actions">
+                <button class="view-btn" @click="viewSchool(school)">View School</button>
+                <button class="save-btn saved" @click="toggleSave(school.id)">Remove</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-else class="empty-state">
+          <h3>No saved schools yet</h3>
+          <p>Search for a school and click “Save School” to add it to your profile.</p>
+        </div>
+      </section>
+
+      <!-- School Details -->
+      <section v-show="activeSection === 'schoolDetailsSection'" id="schoolDetailsSection" class="section active-section">
+        <button class="back-btn" @click="showSection('schoolsSection')">← Back to Search Results</button>
+        <div v-if="selectedSchool" class="school-profile">
+          <div class="profile-header">
+            <p class="eyebrow">SCHOOL OVERVIEW</p>
+            <h1>{{ selectedSchool.name }}</h1>
+            <p>{{ selectedSchool.location }}</p>
+          </div>
+          <div class="profile-body">
+            <div class="profile-columns">
+              <div>
+                <h2>About the School</h2>
+                <p>{{ selectedSchool.description }}</p>
+                <br>
+                <h2>Available Programs</h2>
+                <p>{{ selectedSchool.courses.join(", ") }}</p>
+              </div>
+              <div>
+                <h2>School Information</h2>
+                <div class="detail-item">
+                  <strong>Address</strong>
+                  <p>{{ selectedSchool.address }}</p>
+                </div>
+                <div class="detail-item">
+                  <strong>Contact Number</strong>
+                  <p>{{ selectedSchool.contact }}</p>
+                </div>
+                <div class="detail-item">
+                  <strong>Email</strong>
+                  <p>{{ selectedSchool.email }}</p>
+                </div>
+                <div class="detail-item">
+                  <strong>Official Website</strong>
+                  <p>
+                    <a class="official-link" :href="selectedSchool.website" target="_blank" rel="noopener noreferrer">
+                      Visit official website
+                    </a>
+                  </p>
+                </div>
+              </div>
+            </div>
+            <br>
+            <div class="detail-actions">
+              <button class="primary-btn" @click="toggleSave(selectedSchool.id)">
+                {{ isSchoolSaved(selectedSchool.id) ? 'Remove from Saved' : 'Save School' }}
+              </button>
+              <button class="primary-btn secondary-btn" @click="openRoutes">
+                View Possible Routes
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Routes Section -->
+      <section v-show="activeSection === 'routesSection'" id="routesSection" class="section active-section">
+        <button class="back-btn" @click="showSection('schoolDetailsSection')">← Back to School Overview</button>
+        <div class="section-heading">
+          <p class="eyebrow">POSSIBLE ROUTES</p>
+          <h1>Routes to {{ selectedSchool?.name }}</h1>
+          <p>Enter your starting location to view possible travel routes.</p>
+        </div>
+
+        <div class="route-search">
+          <label for="routeLocation">Your Starting Location</label>
+          <div class="route-input-row">
+            <input
+              id="routeLocation"
+              v-model="routeStartLocation"
+              placeholder="Example: Barangay San Antonio"
+              @keyup.enter="generateRoute"
+            >
+            <button class="primary-btn" @click="generateRoute">Show Routes</button>
+          </div>
+        </div>
+
+        <div class="route-content">
+          <div class="map-placeholder">
+            <div class="map-pin start-pin">S</div>
+            <div class="map-line"></div>
+            <div class="map-pin destination-pin">D</div>
+            <div class="map-label start-label">{{ routeStartLocation || 'Starting Location' }}</div>
+            <div class="map-label destination-label">{{ selectedSchool?.abbreviation }}</div>
+            <p class="map-note">Illustrative route map preview</p>
+          </div>
+
+          <div class="route-options">
+            <h2>Possible Routes</h2>
+            <div v-if="!hasRouteGenerated" class="empty-route">
+              Your route options will appear here after entering your starting location.
+            </div>
+            <div v-else>
+              <div class="route-card">
+                <h3>Route 1: Public Transportation</h3>
+                <p>Travel from {{ routeStartLocation }} toward {{ selectedSchool?.location }} and continue to the university area.</p>
+                <span class="route-time">Estimated: 45–60 minutes</span>
+              </div>
+              <div class="route-card">
+                <h3>Route 2: Alternative Route</h3>
+                <p>Use the nearest major transport terminal and proceed toward {{ selectedSchool?.name }}.</p>
+                <span class="route-time">Estimated: 60–75 minutes</span>
+              </div>
+              <div class="route-card">
+                <h3>Route 3: Private Vehicle</h3>
+                <p>Navigate from {{ routeStartLocation }} to {{ selectedSchool?.address }}.</p>
+                <span class="route-time">Depends on traffic</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Toast Popup -->
+  <div v-if="toast.show" id="toast" class="toast show">
+    <div class="toast-body">
+      <div class="toast-icon">{{ toast.icon }}</div>
+      <div class="toast-text">
+        <strong v-if="toast.title">{{ toast.title }}</strong>
+        <p>{{ toast.message }}</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Vue 3 Local + CDN fallback -->
+<script src="vue.global.js"></script>
+<script>
+  if (!window.Vue) {
+    document.write('<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"><\/script>');
+  }
+</script>
+<script src="script.js"></script>
+</body>
+</html>
