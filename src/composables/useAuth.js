@@ -44,89 +44,84 @@ export function useAuth() {
     currentAuthMode.value = currentAuthMode.value === 'login' ? 'signup' : 'login'
   }
 
-  function loginStudent(emailInput, passwordInput) {
-    const email = (emailInput || '').trim().toLowerCase()
-    const password = passwordInput || ''
+  async function loginStudent(formData) {
+    try {
+      if (!formData.email || !formData.password) {
+        showToast('Please enter your email and password.', 'Missing Fields', '⚠️')
+        return false
+      }
 
-    if (!email || !password) {
-      showToast('Please enter your email and password.', 'Missing Fields', '⚠️')
+      const response = await fetch('http://localhost:8000/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        showToast(data.message || 'Login Failed', 'Error', '⚠️')
+        return false
+      }
+      localStorage.setItem('token', data.token)
+      showToast('Login Success', 'Success', '✅')
+
+      currentUser.value = {
+        id: data.user.id,
+        email: data.user.email,
+        name: data.user.name,
+        role: 'student',
+      }
+      return true
+    } catch (error) {
+      showToast('Network error connecting to backend', 'Error', '⚠️')
       return false
     }
-
-    const account = registeredStudents.value.find(
-      (s) => s.email.toLowerCase() === email && s.password === password,
-    )
-
-    if (!account) {
-      showToast(
-        'Invalid email or password. You can create an account or use: student@example.com / password123',
-        'Login Failed',
-        '⚠️',
-        5000,
-      )
-      return false
-    }
-
-    currentUser.value = {
-      role: 'student',
-      name: `${account.firstName} ${account.lastName}`,
-      email: account.email,
-    }
-    showToast(`Welcome back, ${account.firstName}!`, 'Logged In', '🎓')
-    return true
   }
 
-  function signupStudent({
-    firstNameInput,
-    lastNameInput,
-    emailInput,
-    passwordInput,
-    confirmPasswordInput,
-  }) {
-    const firstName = (firstNameInput || '').trim()
-    const lastName = (lastNameInput || '').trim()
-    const email = (emailInput || '').trim().toLowerCase()
-    const password = passwordInput || ''
-    const confirmPassword = confirmPasswordInput || ''
+  async function signupStudent(formData) {
+    try {
+      if (formData.password !== formData.confirmPassword) {
+        showToast('Passwords do not match', 'Error', '⚠️')
+        return false
+      }
 
-    if (!firstName || !lastName || !email || !password) {
-      showToast('Please complete all required fields.', 'Incomplete Form', '⚠️')
-      return false
-    }
+      const response = await fetch('http://localhost:8000/api/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          email: formData.email,
+          password: formData.password,
+        }),
+      })
 
-    if (password !== confirmPassword) {
-      showToast('Passwords do not match. Please verify your password.', 'Password Mismatch', '⚠️')
-      return false
-    }
+      const data = await response.json()
+      if (!response.ok) {
+        showToast(data.message || 'Registration Failed', 'Error', '⚠️')
+        return false
+      }
 
-    const existingAccount = registeredStudents.value.some((s) => s.email.toLowerCase() === email)
-
-    if (existingAccount) {
       showToast(
-        'An account with this email already exists in memory. Please log in.',
-        'Account Exists',
-        '⚠️',
-        5000,
+        'Account created successfully! Log in to your account to get started',
+        'Success',
+        '✅',
       )
+      return true
+    } catch (error) {
+      showToast('Network error connecting to backend', 'Error', '⚠️')
       return false
     }
-
-    registeredStudents.value.push({
-      firstName,
-      lastName,
-      email,
-      password,
-    })
-
-    currentUser.value = {
-      role: 'student',
-      name: `${firstName} ${lastName}`,
-      email,
-    }
-    showToast(`Account created in memory! Welcome, ${firstName}!`, 'Account Created', '🎉', 4500)
-    return true
   }
-
   function loginInstitution(emailInput, passwordInput) {
     const email = (emailInput || '').trim()
     const password = passwordInput || ''
@@ -185,7 +180,22 @@ export function useAuth() {
     }
   }
 
-  function logout() {
+  async function logout() {
+    const token = localStorage.getItem('token')
+    if (token) {
+      try {
+        await fetch('http://localhost:8000/api/logout', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
+          },
+        })
+      } catch (error) {
+        console.error('Error logging out from server:', error)
+      }
+    }
+    localStorage.removeItem('token')
     currentUser.value = null
     isRoleChosen.value = false
     currentRole.value = 'student'

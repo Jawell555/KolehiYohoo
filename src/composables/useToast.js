@@ -9,27 +9,27 @@ const toast = reactive({
 
 let toastTimer = null
 
-export function useToast() {
-  function showToast(message, title = '', icon = '🔔', duration = 4000) {
-    toast.message = message
-    toast.title = title
-    toast.icon = icon
-    toast.show = true
-    if (toastTimer) {
-      clearTimeout(toastTimer)
-    }
-    toastTimer = setTimeout(() => {
-      toast.show = false
-    }, duration)
+export function showToast(message, title = '', icon = '🔔', duration = 4000) {
+  toast.message = message
+  toast.title = title
+  toast.icon = icon
+  toast.show = true
+  if (toastTimer) {
+    clearTimeout(toastTimer)
   }
-
-  function hideToast() {
+  toastTimer = setTimeout(() => {
     toast.show = false
-    if (toastTimer) {
-      clearTimeout(toastTimer)
-    }
-  }
+  }, duration)
+}
 
+export function hideToast() {
+  toast.show = false
+  if (toastTimer) {
+    clearTimeout(toastTimer)
+  }
+}
+
+export function useToast() {
   return {
     toast,
     showToast,

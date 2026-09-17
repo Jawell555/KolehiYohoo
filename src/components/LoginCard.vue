@@ -71,25 +71,28 @@ function handleModeChange(mode) {
   resetForms()
 }
 
-function onStudentLogin() {
-  const success = loginStudent(loginForm.email, loginForm.password)
+async function onStudentLogin() {
+  const success = await loginStudent({
+    email: loginForm.email,
+    password: loginForm.password,
+  })
   if (success) {
     resetForms()
     setPage('student')
   }
 }
 
-function onStudentSignup() {
-  const success = signupStudent({
-    firstNameInput: signupForm.firstName,
-    lastNameInput: signupForm.lastName,
-    emailInput: signupForm.email,
-    passwordInput: signupForm.password,
-    confirmPasswordInput: signupForm.confirmPassword,
+async function onStudentSignup() {
+  const success = await signupStudent({
+    firstName: signupForm.firstName,
+    lastName: signupForm.lastName,
+    email: signupForm.email,
+    password: signupForm.password,
+    confirmPassword: signupForm.confirmPassword,
   })
   if (success) {
     resetForms()
-    setPage('student')
+    handleModeChange('login')
   }
 }
 

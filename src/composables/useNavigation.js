@@ -13,6 +13,7 @@ export function useNavigation() {
 
   function setPage(page) {
     activePage.value = page
+    window.location.hash = page
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }
