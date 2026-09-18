@@ -1,23 +1,18 @@
 import { ref } from 'vue'
 import { useToast } from './useToast'
 
-const registeredStudents = ref([
-  {
-    firstName: 'Juan',
-    lastName: 'dela Cruz',
-    email: 'student@example.com',
-    password: 'password123',
-  },
-  {
-    firstName: 'Maria',
-    lastName: 'Santos',
-    email: 'maria@example.com',
-    password: 'password123',
-  },
-])
-
-const currentUser = ref(null)
-const currentRole = ref('student') // 'student' or 'institution'
+function getStoredUser() {
+  if (typeof localStorage === 'undefined') return null
+  try {
+    const raw = localStorage.getItem('user')
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+const savedUser = getStoredUser()
+const currentUser = ref(savedUser)
+const currentRole = ref(savedUser?.role || 'student')
 const currentAuthMode = ref('login') // 'login' or 'signup'
 const isRoleChosen = ref(false)
 
@@ -71,12 +66,14 @@ export function useAuth() {
       localStorage.setItem('token', data.token)
       showToast('Login Success', 'Success', '✅')
 
-      currentUser.value = {
+      const userData = {
         id: data.user.id,
         email: data.user.email,
         name: data.user.name,
         role: 'student',
       }
+      currentUser.value = userData
+      localStorage.setItem('user', JSON.stringify(userData))
       return true
     } catch (error) {
       showToast('Network error connecting to backend', 'Error', '⚠️')
@@ -131,11 +128,13 @@ export function useAuth() {
       return false
     }
 
-    currentUser.value = {
+    const userData = {
       role: 'institution',
       name: email.split('@')[0] || 'Institution Partner',
       email,
     }
+    currentUser.value = userData
+    localStorage.setItem('user', JSON.stringify(userData))
     showToast('Signed in to School / Institution preview.', 'Welcome Partner', '🏛️')
     return true
   }
@@ -196,15 +195,13 @@ export function useAuth() {
       }
     }
     localStorage.removeItem('token')
+    localStorage.removeItem('user')
     currentUser.value = null
-    isRoleChosen.value = false
-    currentRole.value = 'student'
-    currentAuthMode.value = 'login'
+
     showToast('You have been signed out.', 'Logged Out', '👋')
   }
 
   return {
-    registeredStudents,
     currentUser,
     currentRole,
     currentAuthMode,

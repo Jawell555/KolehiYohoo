@@ -78,7 +78,7 @@ async function onStudentLogin() {
   })
   if (success) {
     resetForms()
-    setPage('student')
+    setPage('student', { replace: true })
   }
 }
 
@@ -100,7 +100,7 @@ function onInstitutionLogin() {
   const success = loginInstitution(loginForm.email, loginForm.password)
   if (success) {
     resetForms()
-    setPage('student')
+    setPage('student', { replace: true })
   }
 }
 

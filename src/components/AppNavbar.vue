@@ -9,7 +9,7 @@ const { activeSection, showSection, setPage } = useNavigation()
 
 function handleLogout() {
   logout()
-  setPage('login')
+  setPage('login', { replace: true })
 }
 </script>
 
