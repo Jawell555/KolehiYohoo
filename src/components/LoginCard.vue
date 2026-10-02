@@ -1,7 +1,6 @@
 <script setup>
 import { reactive } from 'vue'
 import { useAuth } from '../composables/useAuth'
-import { useNavigation } from '../composables/useNavigation'
 
 const {
   isRoleChosen,
@@ -16,9 +15,8 @@ const {
   submitInstitutionVerification,
   handleGoogleAuth,
   handleForgotPassword,
+  closeAuthModal,
 } = useAuth()
-
-const { setPage } = useNavigation()
 
 const loginForm = reactive({
   email: '',
@@ -39,6 +37,7 @@ const institutionForm = reactive({
   email: '',
   phone: '',
   notes: '',
+  password: '',
 })
 
 function resetForms() {
@@ -54,6 +53,7 @@ function resetForms() {
   institutionForm.email = ''
   institutionForm.phone = ''
   institutionForm.notes = ''
+  institutionForm.password = ''
 }
 
 function handleRoleSelect(role) {
@@ -78,7 +78,7 @@ async function onStudentLogin() {
   })
   if (success) {
     resetForms()
-    setPage('student', { replace: true })
+    closeAuthModal()
   }
 }
 
@@ -96,21 +96,22 @@ async function onStudentSignup() {
   }
 }
 
-function onInstitutionLogin() {
-  const success = loginInstitution(loginForm.email, loginForm.password)
+async function onInstitutionLogin() {
+  const success = await loginInstitution(loginForm.email, loginForm.password)
   if (success) {
     resetForms()
-    setPage('student', { replace: true })
+    closeAuthModal()
   }
 }
 
-function onInstitutionVerification() {
-  const success = submitInstitutionVerification({
+async function onInstitutionVerification() {
+  const success = await submitInstitutionVerification({
     schoolName: institutionForm.schoolName,
     repName: institutionForm.repName,
     email: institutionForm.email,
     phone: institutionForm.phone,
     notes: institutionForm.notes,
+    password: institutionForm.password,
   })
   if (success) {
     resetForms()
@@ -474,6 +475,18 @@ function onForgotPassword() {
             v-model="institutionForm.notes"
             type="text"
             placeholder="e.g., Main Campus, Caloocan City"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="instPassword">Password</label>
+          <input
+            id="instPassword"
+            v-model="institutionForm.password"
+            type="password"
+            placeholder="•••••••• (min 6 characters)"
+            required
+            autocomplete="new-password"
           />
         </div>
 

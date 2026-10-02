@@ -1,24 +1,23 @@
 <script setup>
 import { useNavigation } from './composables/useNavigation'
-import LoginContent from './components/LoginContent.vue'
+import { useAuth } from './composables/useAuth'
 import AppNavbar from './components/AppNavbar.vue'
 import HomeSection from './components/HomeSection.vue'
 import SchoolFinderSection from './components/SchoolFinderSection.vue'
 import SavedSchoolsSection from './components/SavedSchoolsSection.vue'
 import SchoolDetailsSection from './components/SchoolDetailsSection.vue'
 import RoutesSection from './components/RoutesSection.vue'
+import AuthModal from './components/AuthModal.vue'
 import ToastNotification from './components/ToastNotification.vue'
 
-const { activePage, activeSection } = useNavigation()
+const { activeSection } = useNavigation()
+const { isAuthModalOpen } = useAuth()
 </script>
 
 <template>
   <div id="app-root">
-    <!-- Login View -->
-    <LoginContent v-if="activePage === 'login'" />
-
-    <!-- Student / Institution Dashboard View -->
-    <div v-else-if="activePage === 'student'" id="studentPage" class="page active">
+    <!-- Main Application View (Home Page is the default Landing Page) -->
+    <div id="studentPage" class="page active">
       <AppNavbar />
       <main>
         <HomeSection v-show="activeSection === 'homeSection'" />
@@ -28,6 +27,9 @@ const { activePage, activeSection } = useNavigation()
         <RoutesSection v-show="activeSection === 'routesSection'" />
       </main>
     </div>
+
+    <!-- Login / Register Modal -->
+    <AuthModal v-if="isAuthModalOpen" />
 
     <!-- Global Toast Notification -->
     <ToastNotification />

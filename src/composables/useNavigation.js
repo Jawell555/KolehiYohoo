@@ -1,86 +1,89 @@
 import { ref } from 'vue'
+import { useAuth } from './useAuth'
 
-function checkIsLoggedIn() {
-  if (typeof localStorage === 'undefined') return false
-  return Boolean(localStorage.getItem('token') || localStorage.getItem('user'))
+const sectionHashMap = {
+  homeSection: '#home',
+  schoolsSection: '#schools',
+  savedSection: '#saved',
+  schoolDetailsSection: '#details',
+  routesSection: '#routes',
 }
 
-function getInitialPage() {
-  const isLoggedIn = checkIsLoggedIn()
+const hashSectionMap = {
+  home: 'homeSection',
+  schools: 'schoolsSection',
+  saved: 'savedSection',
+  details: 'schoolDetailsSection',
+  routes: 'routesSection',
+}
+
+function getInitialSection() {
   if (typeof window !== 'undefined') {
-    const hash = window.location.hash.replace('#', '')
-    if (isLoggedIn) {
-      // If already logged in, redirect away from login to student dashboard
-      return hash === 'login' || !hash ? 'student' : hash
+    const rawHash = window.location.hash.replace('#', '')
+    if (rawHash === 'login' || rawHash === 'signup' || rawHash === 'register') {
+      return 'homeSection'
     }
-    return 'login'
+    if (hashSectionMap[rawHash]) {
+      return hashSectionMap[rawHash]
+    }
   }
-  return isLoggedIn ? 'student' : 'login'
+  return 'homeSection'
 }
 
-const activePage = ref(getInitialPage())
-const activeSection = ref('homeSection')
+const activePage = ref('student')
+const activeSection = ref(getInitialSection())
 
-// Sync URL hash with initial activePage and listen for browser back/forward buttons
+// Initialize URL and popstate listeners
 if (typeof window !== 'undefined') {
-  if (checkIsLoggedIn()) {
-    // Replace current state with dashboard root and push a guard state so Back stays inside the app
-    window.history.replaceState({ page: 'student', section: activeSection.value }, '', '#student')
-    window.history.pushState({ page: 'student', section: activeSection.value }, '', '#student')
-  } else {
-    window.history.replaceState({ page: 'login' }, '', '#login')
+  const rawHash = window.location.hash.replace('#', '')
+  if (rawHash === 'login') {
+    const { openAuthModal } = useAuth()
+    openAuthModal('login')
+  } else if (rawHash === 'signup' || rawHash === 'register') {
+    const { openAuthModal } = useAuth()
+    openAuthModal('signup')
   }
 
-  // Intercept the browser's Back and Forward buttons
-  window.addEventListener('popstate', (event) => {
-    const isLoggedIn = checkIsLoggedIn()
+  const initialHash = sectionHashMap[activeSection.value] || '#home'
+  window.history.replaceState({ section: activeSection.value }, '', initialHash)
 
-    if (isLoggedIn) {
-      // If the popped state contains a dashboard section, navigate to it
-      if (event.state && event.state.section) {
-        activePage.value = 'student'
-        activeSection.value = event.state.section
-      } else {
-        // Attempting to back out of dashboard to browser index or login:
-        // Keep the user in the dashboard and re-push the guard state
-        activePage.value = 'student'
-        window.history.pushState({ page: 'student', section: activeSection.value }, '', '#student')
-      }
+  // Listen for browser back / forward
+  window.addEventListener('popstate', (event) => {
+    if (event.state && event.state.section) {
+      activeSection.value = event.state.section
     } else {
-      // If not logged in, keep activePage as login
-      activePage.value = 'login'
-      window.history.replaceState({ page: 'login' }, '', '#login')
+      const hash = window.location.hash.replace('#', '')
+      activeSection.value = hashSectionMap[hash] || 'homeSection'
     }
   })
 }
 
 export function useNavigation() {
+  const { openAuthModal } = useAuth()
+
   function showSection(sectionId, { pushHistory = true } = {}) {
     if (activeSection.value === sectionId) return
     activeSection.value = sectionId
     if (typeof window !== 'undefined') {
+      const hash = sectionHashMap[sectionId] || '#home'
       if (pushHistory) {
-        window.history.pushState({ page: 'student', section: sectionId }, '', '#student')
+        window.history.pushState({ section: sectionId }, '', hash)
+      } else {
+        window.history.replaceState({ section: sectionId }, '', hash)
       }
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }
   }
 
   function setPage(page, { replace = false } = {}) {
+    if (page === 'login') {
+      openAuthModal('login')
+      return
+    }
     activePage.value = page
     if (typeof window !== 'undefined') {
-      if (page === 'student') {
-        // Replace login in history, then push guard state so Back button stays inside dashboard
-        window.history.replaceState(
-          { page: 'student', section: activeSection.value },
-          '',
-          '#student',
-        )
-        window.history.pushState({ page: 'student', section: activeSection.value }, '', '#student')
-      } else if (replace) {
-        window.history.replaceState({ page }, '', '#' + page)
-      } else {
-        window.location.hash = page
+      if (replace) {
+        window.history.replaceState({ section: activeSection.value }, '', '#' + page)
       }
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }

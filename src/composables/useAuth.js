@@ -15,9 +15,23 @@ const currentUser = ref(savedUser)
 const currentRole = ref(savedUser?.role || 'student')
 const currentAuthMode = ref('login') // 'login' or 'signup'
 const isRoleChosen = ref(false)
+const isAuthModalOpen = ref(false)
 
 export function useAuth() {
   const { showToast } = useToast()
+
+  function openAuthModal(mode = 'login', role = null) {
+    currentAuthMode.value = mode
+    if (role) {
+      currentRole.value = role
+      isRoleChosen.value = true
+    }
+    isAuthModalOpen.value = true
+  }
+
+  function closeAuthModal() {
+    isAuthModalOpen.value = false
+  }
 
   function selectRole(role) {
     currentRole.value = role
@@ -75,7 +89,7 @@ export function useAuth() {
       currentUser.value = userData
       localStorage.setItem('user', JSON.stringify(userData))
       return true
-    } catch (error) {
+    } catch {
       showToast('Network error connecting to backend', 'Error', '⚠️')
       return false
     }
@@ -114,12 +128,12 @@ export function useAuth() {
         '✅',
       )
       return true
-    } catch (error) {
+    } catch {
       showToast('Network error connecting to backend', 'Error', '⚠️')
       return false
     }
   }
-  function loginInstitution(emailInput, passwordInput) {
+  async function loginInstitution(emailInput, passwordInput) {
     const email = (emailInput || '').trim()
     const password = passwordInput || ''
 
@@ -128,18 +142,42 @@ export function useAuth() {
       return false
     }
 
-    const userData = {
-      role: 'institution',
-      name: email.split('@')[0] || 'Institution Partner',
-      email,
+    try {
+      const response = await fetch('http://localhost:8000/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        showToast(data.message || 'Login Failed', 'Error', '⚠️')
+        return false
+      }
+
+      localStorage.setItem('token', data.token)
+      showToast('Welcome, ' + (data.user.name || 'Partner') + '!', 'Login Success', '🏛️')
+
+      const userData = {
+        id: data.user.id,
+        email: data.user.email,
+        name: data.user.name,
+        role: data.user.role || 'institution',
+        institution: data.user.institution,
+      }
+      currentUser.value = userData
+      localStorage.setItem('user', JSON.stringify(userData))
+      return true
+    } catch {
+      showToast('Network error connecting to backend', 'Error', '⚠️')
+      return false
     }
-    currentUser.value = userData
-    localStorage.setItem('user', JSON.stringify(userData))
-    showToast('Signed in to School / Institution preview.', 'Welcome Partner', '🏛️')
-    return true
   }
 
-  function submitInstitutionVerification({ schoolName, repName, email, phone, _notes }) {
+  async function submitInstitutionVerification({ schoolName, repName, email, phone, notes, password }) {
     const school = (schoolName || '').trim()
     const rep = (repName || '').trim()
     const officialEmail = (email || '').trim()
@@ -150,18 +188,46 @@ export function useAuth() {
       return false
     }
 
-    showToast(
-      `Thank you, ${rep}. We received ${school}'s verification request and will contact you via ${officialEmail} soon.`,
-      'Verification Request Sent!',
-      '📨',
-      6500,
-    )
+    try {
+      const response = await fetch('http://localhost:8000/api/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          role: 'institution',
+          school_name: school,
+          rep_name: rep,
+          email: officialEmail,
+          phone: contactPhone,
+          notes: notes || '',
+          password: password || 'KolehiYohoo!2026',
+        }),
+      })
 
-    setTimeout(() => {
-      currentAuthMode.value = 'login'
-    }, 1200)
+      const data = await response.json()
+      if (!response.ok) {
+        showToast(data.message || 'Account request failed', 'Error', '⚠️')
+        return false
+      }
 
-    return true
+      showToast(
+        `Thank you, ${rep}. Account created for ${school}! You can now log in.`,
+        'Account Registered!',
+        '🏛️',
+        6500,
+      )
+
+      setTimeout(() => {
+        currentAuthMode.value = 'login'
+      }, 1200)
+
+      return true
+    } catch {
+      showToast('Network error connecting to backend', 'Error', '⚠️')
+      return false
+    }
   }
 
   function handleGoogleAuth() {
@@ -197,6 +263,8 @@ export function useAuth() {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     currentUser.value = null
+    isRoleChosen.value = false
+    currentRole.value = 'student'
 
     showToast('You have been signed out.', 'Logged Out', '👋')
   }
@@ -206,6 +274,9 @@ export function useAuth() {
     currentRole,
     currentAuthMode,
     isRoleChosen,
+    isAuthModalOpen,
+    openAuthModal,
+    closeAuthModal,
     selectRole,
     showAccountSelect,
     setAuthMode,
