@@ -50,7 +50,7 @@ function handleLogout() {
       <template v-if="currentUser">
         <span class="nav-role-badge">
           {{
-            currentRole === 'institution'
+            (currentUser?.role === 'institution' || currentUser?.role_id === 2)
               ? '🏛️ Institution'
               : '🎓 ' + (currentUser?.name || 'Student')
           }}

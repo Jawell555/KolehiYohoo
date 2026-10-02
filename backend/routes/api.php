@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Route;
 // Public Authentication Routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/student/login', [AuthController::class, 'loginStudent']);
+Route::post('/institution/login', [AuthController::class, 'loginInstitution']);
 
 // Authenticated Routes
 Route::middleware('auth:sanctum')->group(function () {

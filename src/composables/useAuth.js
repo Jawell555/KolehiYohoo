@@ -60,7 +60,7 @@ export function useAuth() {
         return false
       }
 
-      const response = await fetch('http://localhost:8000/api/login', {
+      const response = await fetch('http://localhost:8000/api/student/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -69,14 +69,22 @@ export function useAuth() {
         body: JSON.stringify({
           email: formData.email,
           password: formData.password,
+          role: 'student',
+          role_id: 1,
         }),
       })
 
       const data = await response.json()
       if (!response.ok) {
-        showToast(data.message || 'Login Failed', 'Error', '⚠️')
+        showToast(data.message || 'Login Failed', 'Access Denied', '⚠️')
         return false
       }
+
+      if (data.user?.role !== 'student' && data.user?.role_id !== 1) {
+        showToast('This account is not a student account.', 'Access Denied', '⚠️')
+        return false
+      }
+
       localStorage.setItem('token', data.token)
       showToast('Login Success', 'Success', '✅')
 
@@ -84,9 +92,12 @@ export function useAuth() {
         id: data.user.id,
         email: data.user.email,
         name: data.user.name,
-        role: 'student',
+        role: data.user.role || 'student',
+        role_id: data.user.role_id || 1,
+        student: data.user.student,
       }
       currentUser.value = userData
+      currentRole.value = 'student'
       localStorage.setItem('user', JSON.stringify(userData))
       return true
     } catch {
@@ -143,18 +154,28 @@ export function useAuth() {
     }
 
     try {
-      const response = await fetch('http://localhost:8000/api/login', {
+      const response = await fetch('http://localhost:8000/api/institution/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({
+          email,
+          password,
+          role: 'institution',
+          role_id: 2,
+        }),
       })
 
       const data = await response.json()
       if (!response.ok) {
-        showToast(data.message || 'Login Failed', 'Error', '⚠️')
+        showToast(data.message || 'Login Failed', 'Access Denied', '⚠️')
+        return false
+      }
+
+      if (data.user?.role !== 'institution' && data.user?.role_id !== 2) {
+        showToast('This account is not registered as an institution.', 'Access Denied', '⚠️')
         return false
       }
 
@@ -166,9 +187,11 @@ export function useAuth() {
         email: data.user.email,
         name: data.user.name,
         role: data.user.role || 'institution',
+        role_id: data.user.role_id || 2,
         institution: data.user.institution,
       }
       currentUser.value = userData
+      currentRole.value = 'institution'
       localStorage.setItem('user', JSON.stringify(userData))
       return true
     } catch {
@@ -177,7 +200,14 @@ export function useAuth() {
     }
   }
 
-  async function submitInstitutionVerification({ schoolName, repName, email, phone, notes, password }) {
+  async function submitInstitutionVerification({
+    schoolName,
+    repName,
+    email,
+    phone,
+    notes,
+    password,
+  }) {
     const school = (schoolName || '').trim()
     const rep = (repName || '').trim()
     const officialEmail = (email || '').trim()

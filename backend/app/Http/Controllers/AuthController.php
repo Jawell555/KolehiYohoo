@@ -69,6 +69,7 @@ class AuthController extends Controller
                 'user' => [
                     'id' => $user->id,
                     'email' => $user->email,
+                    'role_id' => $user->role_id,
                     'role' => 'student',
                     'name' => "{$student->f_name} {$student->l_name}",
                     'student' => $student,
@@ -140,12 +141,31 @@ class AuthController extends Controller
                 'user' => [
                     'id' => $user->id,
                     'email' => $user->email,
+                    'role_id' => $user->role_id,
                     'role' => 'institution',
                     'name' => $institution->institution_name,
                     'institution' => $institution,
                 ],
             ], 201);
         });
+    }
+
+    /**
+     * Log in specifically as a Student.
+     */
+    public function loginStudent(Request $request)
+    {
+        $request->merge(['role' => 'student', 'role_id' => 1]);
+        return $this->login($request);
+    }
+
+    /**
+     * Log in specifically as an Institution.
+     */
+    public function loginInstitution(Request $request)
+    {
+        $request->merge(['role' => 'institution', 'role_id' => 2]);
+        return $this->login($request);
     }
 
     /**
@@ -156,6 +176,8 @@ class AuthController extends Controller
         $validated = $request->validate([
             'email' => 'required|string|email',
             'password' => 'required|string',
+            'role' => 'nullable|string',
+            'role_id' => 'nullable|integer',
         ]);
 
         $user = User::with(['role', 'student', 'institution', 'admin'])
@@ -182,6 +204,27 @@ class AuthController extends Controller
             default => 'student',
         };
 
+        // Enforce role matching if a specific role or role_id was requested
+        if (!empty($validated['role'])) {
+            $expectedRole = strtolower($validated['role']);
+            if (strtolower($roleName) !== $expectedRole) {
+                $article = in_array(strtolower($roleName)[0], ['a', 'e', 'i', 'o', 'u']) ? 'an' : 'a';
+                return response()->json([
+                    'message' => "Unauthorized. This account is registered as {$article} {$roleName} and cannot log in through the {$expectedRole} portal.",
+                ], 403);
+            }
+        }
+
+        if (!empty($validated['role_id'])) {
+            $expectedRoleId = (int) $validated['role_id'];
+            if ((int) $user->role_id !== $expectedRoleId) {
+                $article = in_array(strtolower($roleName)[0], ['a', 'e', 'i', 'o', 'u']) ? 'an' : 'a';
+                return response()->json([
+                    'message' => "Unauthorized. This account is registered as {$article} {$roleName}.",
+                ], 403);
+            }
+        }
+
         $displayName = $user->email;
         if ($roleName === 'student' && $user->student) {
             $displayName = trim("{$user->student->f_name} {$user->student->l_name}");
@@ -199,6 +242,7 @@ class AuthController extends Controller
             'user' => [
                 'id' => $user->id,
                 'email' => $user->email,
+                'role_id' => $user->role_id,
                 'role' => $roleName,
                 'name' => $displayName,
                 'student' => $user->student,
@@ -235,6 +279,7 @@ class AuthController extends Controller
             'user' => [
                 'id' => $user->id,
                 'email' => $user->email,
+                'role_id' => $user->role_id,
                 'role' => $roleName,
                 'name' => $displayName,
                 'student' => $user->student,

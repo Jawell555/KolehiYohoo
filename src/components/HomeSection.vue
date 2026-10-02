@@ -6,9 +6,13 @@ import { useNavigation } from '../composables/useNavigation'
 const { currentUser, currentRole, openAuthModal } = useAuth()
 const { showSection } = useNavigation()
 
+const isInstitution = computed(() => {
+  return currentUser.value && (currentUser.value.role === 'institution' || currentUser.value.role_id === 2)
+})
+
 const eyebrowText = computed(() => {
   if (currentUser.value) {
-    return currentRole.value === 'institution' ? 'INSTITUTION PORTAL' : 'STUDENT DASHBOARD'
+    return isInstitution.value ? 'INSTITUTION PORTAL' : 'STUDENT DASHBOARD'
   }
   return 'DISCOVER YOUR PATH'
 })
@@ -17,7 +21,7 @@ const eyebrowText = computed(() => {
 <template>
   <section id="homeSection" class="section">
     <!-- Institution Partner Banner (only shown if signed in as institution) -->
-    <div v-if="currentUser && currentRole === 'institution'" class="institution-banner">
+    <div v-if="isInstitution" class="institution-banner">
       <div class="banner-icon">🏛️</div>
       <div class="banner-text">
         <strong>School / Institution Preview Mode</strong>
