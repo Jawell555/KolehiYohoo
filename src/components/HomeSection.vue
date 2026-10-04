@@ -3,19 +3,19 @@ import { computed } from 'vue'
 import { useAuth } from '../composables/useAuth'
 import { useNavigation } from '../composables/useNavigation'
 
-const { currentUser, currentRole, openAuthModal } = useAuth()
+const { currentUser, openAuthModal } = useAuth()
 const { showSection } = useNavigation()
 
 const isInstitution = computed(() => {
   return currentUser.value && (currentUser.value.role === 'institution' || currentUser.value.role_id === 2)
 })
 
-const eyebrowText = computed(() => {
-  if (currentUser.value) {
-    return isInstitution.value ? 'INSTITUTION PORTAL' : 'STUDENT DASHBOARD'
-  }
-  return 'DISCOVER YOUR PATH'
-})
+// const eyebrowText = computed(() => {
+//   if (currentUser.value) {
+//     return isInstitution.value ? 'INSTITUTION PORTAL' : 'STUDENT DASHBOARD'
+//   }
+//   return 'DISCOVER YOUR PATH'
+// })
 </script>
 
 <template>

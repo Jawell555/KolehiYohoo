@@ -10,7 +10,7 @@ class Institution extends Model
     use HasFactory;
 
     protected $table = 'institutions';
-    protected $primaryKey = 'institutionID';
+    protected $primaryKey = 'institution_id';
     public $timestamps = false;
 
     protected $fillable = [

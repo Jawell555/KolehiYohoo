@@ -4,15 +4,13 @@ const toast = reactive({
   show: false,
   title: '',
   message: '',
-  icon: '🔔',
 })
 
 let toastTimer = null
 
-export function showToast(message, title = '', icon = '🔔', duration = 4000) {
+export function showToast(message, title = '', duration = 4000) {
   toast.message = message
   toast.title = title
-  toast.icon = icon
   toast.show = true
   if (toastTimer) {
     clearTimeout(toastTimer)

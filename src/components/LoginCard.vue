@@ -6,6 +6,10 @@ const {
   isRoleChosen,
   currentRole,
   currentAuthMode,
+  isSubmitting,
+  authError,
+  authSuccess,
+  clearAuthMessages,
   selectRole,
   showAccountSelect,
   setAuthMode,
@@ -41,6 +45,7 @@ const institutionForm = reactive({
 })
 
 function resetForms() {
+  clearAuthMessages()
   loginForm.email = ''
   loginForm.password = ''
   signupForm.firstName = ''
@@ -178,7 +183,7 @@ function onForgotPassword() {
         </h2>
         <p class="subtitle">
           <template v-if="currentRole === 'institution' && currentAuthMode === 'signup'">
-            Submit your details for personal institutional verification.
+            Submit your details for institutional verification.
           </template>
           <template v-else-if="currentRole === 'institution' && currentAuthMode === 'login'">
             Sign in to manage your school portal
@@ -188,6 +193,16 @@ function onForgotPassword() {
           </template>
           <template v-else>Sign in to continue to your student dashboard</template>
         </p>
+      </div>
+
+      <!-- Inline Error Feedback -->
+      <div v-if="authError" class="auth-inline-error" role="alert">
+        <span class="auth-error-text">{{ authError }}</span>
+      </div>
+
+      <!-- Inline Success Feedback -->
+      <div v-if="authSuccess" class="auth-inline-success" role="status">
+        <span class="auth-success-text">{{ authSuccess }}</span>
       </div>
 
       <!-- Auth Tabs -->
@@ -277,7 +292,10 @@ function onForgotPassword() {
           />
         </div>
 
-        <button type="submit" class="primary-btn auth-submit-btn">Log In</button>
+        <button type="submit" class="primary-btn auth-submit-btn" :disabled="isSubmitting">
+          <span v-if="isSubmitting" class="btn-spinner"></span>
+          <span>{{ isSubmitting ? 'Signing in...' : 'Log In' }}</span>
+        </button>
 
         <div class="auth-footer">
           <span>Don't have an account?</span>
@@ -300,7 +318,7 @@ function onForgotPassword() {
               id="studentFirstName"
               v-model="signupForm.firstName"
               type="text"
-              placeholder="Juan"
+              placeholder="Rene"
               required
               autocomplete="given-name"
             />
@@ -311,7 +329,7 @@ function onForgotPassword() {
               id="studentLastName"
               v-model="signupForm.lastName"
               type="text"
-              placeholder="dela Cruz"
+              placeholder="Baterbonia"
               required
               autocomplete="family-name"
             />
@@ -354,7 +372,10 @@ function onForgotPassword() {
           />
         </div>
 
-        <button type="submit" class="primary-btn auth-submit-btn">Create Account</button>
+        <button type="submit" class="primary-btn auth-submit-btn" :disabled="isSubmitting">
+          <span v-if="isSubmitting" class="btn-spinner"></span>
+          <span>{{ isSubmitting ? 'Creating account...' : 'Create Account' }}</span>
+        </button>
 
         <div class="auth-footer">
           <span>Already have an account?</span>
@@ -397,7 +418,10 @@ function onForgotPassword() {
           />
         </div>
 
-        <button type="submit" class="primary-btn auth-submit-btn">Log In</button>
+        <button type="submit" class="primary-btn auth-submit-btn" :disabled="isSubmitting">
+          <span v-if="isSubmitting" class="btn-spinner"></span>
+          <span>{{ isSubmitting ? 'Signing in...' : 'Log In' }}</span>
+        </button>
 
         <div class="auth-footer">
           <span>Need an institution account?</span>
@@ -414,9 +438,8 @@ function onForgotPassword() {
         @submit.prevent="onInstitutionVerification"
       >
         <div class="verify-notice-banner">
-          <div class="verify-notice-icon">🛡️</div>
           <div class="verify-notice-text">
-            <strong>Personal Verification Required</strong>
+            <strong>Admin Verification Required</strong>
             <p>
               We personally verify every institution before creating your account. Send us your
               details and our team will get in touch.
@@ -430,18 +453,18 @@ function onForgotPassword() {
             id="instSchoolName"
             v-model="institutionForm.schoolName"
             type="text"
-            placeholder="e.g., Manila Central University"
+            placeholder="University of the Philippines"
             required
           />
         </div>
 
         <div class="form-group">
-          <label for="instRepName">Representative Name & Title</label>
+          <label for="instRepName">Representative Name</label>
           <input
             id="instRepName"
             v-model="institutionForm.repName"
             type="text"
-            placeholder="e.g., Dr. Maria Santos (Admissions Director)"
+            placeholder="Dr. Maria Santos"
             required
           />
         </div>
@@ -452,7 +475,7 @@ function onForgotPassword() {
             id="instEmail"
             v-model="institutionForm.email"
             type="email"
-            placeholder="e.g., admissions@mcu.edu.ph"
+            placeholder="admissions@up.edu.ph"
             required
           />
         </div>
@@ -463,7 +486,7 @@ function onForgotPassword() {
             id="instPhone"
             v-model="institutionForm.phone"
             type="tel"
-            placeholder="e.g., 0917-123-4567 or (02) 8123-4567"
+            placeholder="0912 345 6789"
             required
           />
         </div>
@@ -474,7 +497,7 @@ function onForgotPassword() {
             id="instNotes"
             v-model="institutionForm.notes"
             type="text"
-            placeholder="e.g., Main Campus, Caloocan City"
+            placeholder="Main Campus"
           />
         </div>
 
@@ -490,7 +513,10 @@ function onForgotPassword() {
           />
         </div>
 
-        <button type="submit" class="primary-btn auth-submit-btn">Send Verification Request</button>
+        <button type="submit" class="primary-btn auth-submit-btn" :disabled="isSubmitting">
+          <span v-if="isSubmitting" class="btn-spinner"></span>
+          <span>{{ isSubmitting ? 'Sending request...' : 'Send Verification Request' }}</span>
+        </button>
 
         <div class="auth-footer">
           <span>Already verified?</span>
@@ -503,4 +529,87 @@ function onForgotPassword() {
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+.auth-inline-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 16px;
+  animation: errorFadeIn 0.2s ease-out;
+}
+
+.auth-error-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.auth-error-text {
+  line-height: 1.4;
+}
+
+.auth-inline-success {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 16px;
+  animation: errorFadeIn 0.2s ease-out;
+}
+
+.auth-success-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.auth-success-text {
+  line-height: 1.4;
+}
+
+.btn-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  display: inline-block;
+  animation: btnSpin 0.7s linear infinite;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.auth-submit-btn:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+@keyframes btnSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes errorFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+</style>

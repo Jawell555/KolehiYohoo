@@ -391,13 +391,29 @@ input:focus {
 
 /* Navigation Bar */
 .navbar {
+  position: sticky;
+  top: 0;
+  z-index: 200;
   height: 75px;
   background: white;
   border-bottom: 1px solid var(--border);
+  box-shadow: 0 2px 8px rgba(18, 52, 91, 0.04);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 7%;
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 44px;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
 .nav-brand {
@@ -410,7 +426,7 @@ input:focus {
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 30px;
+  gap: 8px;
 }
 
 .nav-links a {
@@ -419,12 +435,24 @@ input:focus {
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: color 0.2s;
+  padding: 8px 16px;
+  border-radius: 9px;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.nav-links a:hover,
+.nav-links a:hover {
+  color: var(--blue-dark);
+  background: #f0f6ff;
+}
+
 .nav-links a.active {
-  color: var(--blue);
+  background: var(--blue);
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(37, 99, 166, 0.28);
 }
 
 .nav-role-badge {
@@ -616,10 +644,26 @@ main {
   border-radius: 15px;
   border: 1px solid var(--border);
   display: grid;
-  grid-template-columns: 1fr 1fr auto;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 0.9fr) minmax(0, 1.3fr) auto;
   gap: 20px;
   align-items: end;
   margin-bottom: 30px;
+}
+
+/* Keep the inputs and the Search button on the same baseline/height */
+.search-panel .form-group {
+  margin-bottom: 0;
+}
+
+.search-panel input,
+.search-panel .search-btn {
+  height: 48px;
+}
+
+.search-panel .search-btn {
+  width: 48px;
+  font-size: 14px;
+  white-space: nowrap;
 }
 
 .search-message {
@@ -694,7 +738,7 @@ main {
   border-radius: 10px;
   box-shadow: 0 10px 28px rgba(18, 52, 91, 0.15);
   z-index: 100;
-  max-height: 132px;
+  max-height: 176px;
   overflow-y: auto;
 }
 
@@ -783,6 +827,9 @@ main {
   border-radius: 14px;
   overflow: hidden;
   transition: 0.3s;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .school-card:hover {
@@ -803,6 +850,9 @@ main {
 
 .school-body {
   padding: 22px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .school-body h3 {
@@ -827,9 +877,17 @@ main {
   font-size: 11px;
   font-weight: 700;
   margin-bottom: 15px;
+  align-self: flex-start;
 }
 
-.card-actions,
+.card-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: auto;
+  padding-top: 5px;
+}
+
 .detail-actions {
   display: flex;
   gap: 10px;
@@ -1152,22 +1210,25 @@ main {
   font-weight: 700;
 }
 
-/* Toast */
+/* Toast Notification - Prominent Top Center */
 .toast {
   position: fixed;
-  bottom: 25px;
-  right: 25px;
-  max-width: 390px;
-  background: var(--blue-dark);
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 40px);
+  max-width: 440px;
+  background: #112d4e;
   color: white;
-  padding: 16px 20px;
-  border-radius: 12px;
+  padding: 14px 18px;
+  border-radius: 14px;
   display: none;
   font-size: 14px;
-  z-index: 999;
-  box-shadow: 0 12px 35px rgba(9, 40, 75, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  animation: toastPop 0.3s ease;
+  z-index: 2000;
+  box-shadow:
+    0 16px 40px rgba(9, 40, 75, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.12);
+  animation: toastSlideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .toast.show {
@@ -1177,7 +1238,7 @@ main {
 .toast-body {
   display: flex;
   gap: 12px;
-  align-items: flex-start;
+  align-items: center;
 }
 
 .toast-icon {
@@ -1186,27 +1247,50 @@ main {
   flex-shrink: 0;
 }
 
+.toast-text {
+  flex: 1;
+}
+
 .toast-text strong {
   display: block;
   font-size: 14px;
-  margin-bottom: 4px;
-  color: #85c2f7;
+  font-weight: 700;
+  margin-bottom: 2px;
+  color: #93c5fd;
 }
 
 .toast-text p {
   margin: 0;
   font-size: 13px;
-  line-height: 1.5;
-  color: #e3f0ff;
+  line-height: 1.4;
+  color: #f1f5f9;
 }
 
-@keyframes toastPop {
+.toast-close-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.toast-close-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+@keyframes toastSlideDown {
   from {
-    transform: translateY(15px);
+    transform: translate(-50%, -24px) scale(0.96);
     opacity: 0;
   }
   to {
-    transform: translateY(0);
+    transform: translate(-50%, 0) scale(1);
     opacity: 1;
   }
 }
@@ -1232,6 +1316,9 @@ main {
   }
   .search-panel {
     grid-template-columns: 1fr;
+  }
+  .search-panel .search-btn {
+    width: 100%;
   }
   .school-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -1265,4 +1352,60 @@ main {
   .route-input-row {
     flex-direction: column;
   }
+}
+
+/* ==========================================================================
+   Skeleton Screens & Shimmer Utilities
+   ========================================================================== */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    #e8edf4 0%,
+    #f4f8fc 50%,
+    #e8edf4 100%
+  );
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.5s ease-in-out infinite;
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes skeletonShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton-text {
+  height: 14px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.skeleton-title {
+  height: 22px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+
+.skeleton-badge {
+  height: 22px;
+  border-radius: 6px;
+  display: inline-block;
+  margin-bottom: 12px;
+}
+
+.skeleton-btn {
+  height: 42px;
+  border-radius: 8px;
+}
+
+.skeleton-cover {
+  width: 100%;
+  height: 120px;
+  border-radius: 0;
 }

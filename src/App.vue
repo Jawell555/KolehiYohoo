@@ -7,6 +7,7 @@ import SchoolFinderSection from './components/SchoolFinderSection.vue'
 import SavedSchoolsSection from './components/SavedSchoolsSection.vue'
 import SchoolDetailsSection from './components/SchoolDetailsSection.vue'
 import RoutesSection from './components/RoutesSection.vue'
+import SettingsSection from './components/SettingsSection.vue'
 import AuthModal from './components/AuthModal.vue'
 import ToastNotification from './components/ToastNotification.vue'
 
@@ -19,12 +20,13 @@ const { isAuthModalOpen } = useAuth()
     <!-- Main Application View (Home Page is the default Landing Page) -->
     <div id="studentPage" class="page active">
       <AppNavbar />
-      <main>
+      <main :class="{ 'main-full': activeSection === 'schoolDetailsSection' }">
         <HomeSection v-show="activeSection === 'homeSection'" />
         <SchoolFinderSection v-show="activeSection === 'schoolsSection'" />
         <SavedSchoolsSection v-show="activeSection === 'savedSection'" />
         <SchoolDetailsSection v-show="activeSection === 'schoolDetailsSection'" />
         <RoutesSection v-show="activeSection === 'routesSection'" />
+        <SettingsSection v-show="activeSection === 'settingsSection'" />
       </main>
     </div>
 
@@ -36,4 +38,9 @@ const { isAuthModalOpen } = useAuth()
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+/* School overview spans the full screen width */
+main.main-full {
+  max-width: none;
+}
+</style>

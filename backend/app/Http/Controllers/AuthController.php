@@ -42,9 +42,8 @@ class AuthController extends Controller
         ]);
 
         return DB::transaction(function () use ($validated) {
-            // Find or use role_id = 1 for student
-            $studentRole = Role::where('role_name', 'student')->first();
-            $roleId = $studentRole ? $studentRole->id : 1;
+            // Student role is role_id = 1
+            $roleId = 1;
 
             $user = User::create([
                 'email' => $validated['email'],
@@ -55,23 +54,21 @@ class AuthController extends Controller
 
             $student = Student::create([
                 'user_id' => $user->id,
-                'f_name' => $validated['first_name'],
-                'l_name' => $validated['last_name'],
+                'first_name' => $validated['first_name'],
+                'last_name' => $validated['last_name'],
                 'address' => $validated['address'] ?? null,
                 'school_name' => $validated['school_name'] ?? null,
             ]);
 
-            $token = $user->createToken('auth_token')->plainTextToken;
-
             return response()->json([
                 'message' => 'Student registered successfully',
-                'token' => $token,
+                'token' => null,
                 'user' => [
                     'id' => $user->id,
                     'email' => $user->email,
                     'role_id' => $user->role_id,
                     'role' => 'student',
-                    'name' => "{$student->f_name} {$student->l_name}",
+                    'name' => "{$student->first_name} {$student->last_name}",
                     'student' => $student,
                 ],
             ], 201);
@@ -97,8 +94,8 @@ class AuthController extends Controller
             'notes' => 'nullable|string|max:500',
         ]);
 
-        // Default password if not provided in verification request
-        $password = $validated['password'] ?? 'KolehiYohoo!2026';
+        // Generate random secure password if not provided in verification request
+        $password = $validated['password'] ?? \Illuminate\Support\Str::random(32);
         $institutionName = $validated['institution_name'] ?? $validated['school_name'] ?? 'Partner Institution';
         $contactNo = $validated['contact_no'] ?? $validated['phone'] ?? null;
         $address = $validated['address'] ?? $validated['notes'] ?? null;
@@ -113,8 +110,8 @@ class AuthController extends Controller
         }
 
         return DB::transaction(function () use ($validated, $password, $institutionName, $contactNo, $address, $firstName, $lastName) {
-            $instRole = Role::where('role_name', 'institution')->first();
-            $roleId = $instRole ? $instRole->id : 2;
+            // Institution role is role_id = 2
+            $roleId = 2;
 
             $user = User::create([
                 'email' => $validated['email'],
@@ -133,11 +130,9 @@ class AuthController extends Controller
                 'is_approved' => false,
             ]);
 
-            $token = $user->createToken('auth_token')->plainTextToken;
-
             return response()->json([
                 'message' => 'Institution registered successfully',
-                'token' => $token,
+                'token' => null,
                 'user' => [
                     'id' => $user->id,
                     'email' => $user->email,
@@ -180,9 +175,7 @@ class AuthController extends Controller
             'role_id' => 'nullable|integer',
         ]);
 
-        $user = User::with(['role', 'student', 'institution', 'admin'])
-            ->where('email', $validated['email'])
-            ->first();
+        $user = User::where('email', $validated['email'])->first();
 
         if (!$user || !Hash::check($validated['password'], $user->hash_password)) {
             return response()->json([
@@ -196,13 +189,15 @@ class AuthController extends Controller
             ], 403);
         }
 
-        // Determine user role and formatted display name
-        $roleName = $user->role ? $user->role->role_name : match ($user->role_id) {
-            1 => 'student',
-            2 => 'institution',
-            3 => 'admin',
-            default => 'student',
-        };
+        $user->load(['role', 'student', 'institution', 'admin']);
+        $roleName = $user->role_name;
+
+        // Check if pending institution approval
+        if ($roleName === 'institution' && $user->institution && !$user->institution->is_approved) {
+            return response()->json([
+                'message' => 'Your institution account is pending verification and approval by administrators.',
+            ], 403);
+        }
 
         // Enforce role matching if a specific role or role_id was requested
         if (!empty($validated['role'])) {
@@ -225,15 +220,6 @@ class AuthController extends Controller
             }
         }
 
-        $displayName = $user->email;
-        if ($roleName === 'student' && $user->student) {
-            $displayName = trim("{$user->student->f_name} {$user->student->l_name}");
-        } elseif ($roleName === 'institution' && $user->institution) {
-            $displayName = $user->institution->institution_name ?: $user->email;
-        } elseif ($roleName === 'admin' && $user->admin) {
-            $displayName = $user->admin->name ?: $user->email;
-        }
-
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
@@ -242,9 +228,11 @@ class AuthController extends Controller
             'user' => [
                 'id' => $user->id,
                 'email' => $user->email,
+                'email_verified' => !is_null($user->email_verified_at),
+                'phone' => $user->student?->contact_no ?? $user->institution?->contact_no,
                 'role_id' => $user->role_id,
                 'role' => $roleName,
-                'name' => $displayName,
+                'name' => $user->display_name,
                 'student' => $user->student,
                 'institution' => $user->institution,
                 'admin' => $user->admin,
@@ -259,33 +247,165 @@ class AuthController extends Controller
     {
         $user = $request->user()->load(['role', 'student', 'institution', 'admin']);
 
-        $roleName = $user->role ? $user->role->role_name : match ($user->role_id) {
-            1 => 'student',
-            2 => 'institution',
-            3 => 'admin',
-            default => 'student',
-        };
-
-        $displayName = $user->email;
-        if ($roleName === 'student' && $user->student) {
-            $displayName = trim("{$user->student->f_name} {$user->student->l_name}");
-        } elseif ($roleName === 'institution' && $user->institution) {
-            $displayName = $user->institution->institution_name ?: $user->email;
-        } elseif ($roleName === 'admin' && $user->admin) {
-            $displayName = $user->admin->name ?: $user->email;
-        }
-
         return response()->json([
             'user' => [
                 'id' => $user->id,
                 'email' => $user->email,
+                'email_verified' => !is_null($user->email_verified_at),
+                'phone' => $user->student?->contact_no ?? $user->institution?->contact_no,
                 'role_id' => $user->role_id,
-                'role' => $roleName,
-                'name' => $displayName,
+                'role' => $user->role_name,
+                'name' => $user->display_name,
                 'student' => $user->student,
                 'institution' => $user->institution,
                 'admin' => $user->admin,
             ],
+        ]);
+    }
+
+    /**
+     * Update authenticated user profile in the database.
+     */
+    public function updateProfile(Request $request)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        // Only validate email uniqueness if email was actually submitted and changed
+        $rules = [
+            'first_name' => 'nullable|string|max:255',
+            'last_name' => 'nullable|string|max:255',
+            'address' => 'nullable|string|max:500',
+            'school_name' => 'nullable|string|max:255',
+            'contact_no' => ['nullable', 'string', 'regex:/^09[0-9]{9}$/'],
+            'phone' => ['nullable', 'string', 'regex:/^09[0-9]{9}$/'],
+            'institution_name' => 'nullable|string|max:255',
+        ];
+
+        $messages = [
+            'contact_no.regex' => 'Enter a valid phone number!',
+            'phone.regex' => 'Enter a valid phone number!',
+        ];
+
+        if ($request->filled('email') && strtolower($request->email) !== strtolower($user->email)) {
+            $rules['email'] = 'required|string|email|max:255|unique:users,email,' . $user->id;
+        }
+
+        $validated = $request->validate($rules, $messages);
+
+        // Update email on users table if changed
+        if (!empty($validated['email']) && strtolower($validated['email']) !== strtolower($user->email)) {
+            $user->email = $validated['email'];
+            $user->email_verified_at = null; // Re-verification required
+            $user->save();
+        }
+
+        // Update student profile directly on students table
+        $student = $user->student;
+        if ($user->role_id == 1 || $student) {
+            $studentData = [];
+            if (isset($validated['first_name'])) $studentData['first_name'] = $validated['first_name'];
+            if (isset($validated['last_name'])) $studentData['last_name'] = $validated['last_name'];
+            if (isset($validated['address'])) $studentData['address'] = $validated['address'];
+            if (isset($validated['school_name'])) $studentData['school_name'] = $validated['school_name'];
+            if (isset($validated['contact_no'])) $studentData['contact_no'] = $validated['contact_no'];
+            elseif (isset($validated['phone'])) $studentData['contact_no'] = $validated['phone'];
+
+            if (!empty($studentData)) {
+                if ($student) {
+                    $student->update($studentData);
+                } else {
+                    $student = Student::create(array_merge(['user_id' => $user->id], $studentData));
+                    $user->setRelation('student', $student);
+                }
+            }
+        }
+
+        // Update institution profile directly on institutions table if applicable
+        $institution = $user->institution;
+        if ($user->role_id == 2 || $institution) {
+            $instData = [];
+            if (isset($validated['institution_name'])) $instData['institution_name'] = $validated['institution_name'];
+            if (isset($validated['first_name'])) $instData['first_name'] = $validated['first_name'];
+            if (isset($validated['last_name'])) $instData['last_name'] = $validated['last_name'];
+            if (isset($validated['address'])) $instData['address'] = $validated['address'];
+            if (isset($validated['contact_no'])) $instData['contact_no'] = $validated['contact_no'];
+            elseif (isset($validated['phone'])) $instData['contact_no'] = $validated['phone'];
+
+            if (!empty($instData)) {
+                if ($institution) {
+                    $institution->update($instData);
+                } else {
+                    $institution = Institution::create(array_merge(['user_id' => $user->id], $instData));
+                    $user->setRelation('institution', $institution);
+                }
+            }
+        }
+
+        return response()->json([
+            'message' => 'Profile updated successfully',
+            'user' => [
+                'id' => $user->id,
+                'email' => $user->email,
+                'email_verified' => !is_null($user->email_verified_at),
+                'phone' => $student?->contact_no ?? $institution?->contact_no,
+                'role_id' => $user->role_id,
+                'role' => $user->role_name,
+                'name' => $user->display_name,
+                'student' => $student,
+                'institution' => $institution,
+                'admin' => $user->admin,
+            ],
+        ]);
+    }
+
+    /**
+     * Change account password in users table.
+     */
+    public function changePassword(Request $request)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        $validated = $request->validate([
+            'current_password' => 'required|string',
+            'new_password' => 'required|string|min:6',
+        ]);
+
+        if (!Hash::check($validated['current_password'], $user->hash_password)) {
+            return response()->json([
+                'message' => 'Current password does not match our records.',
+            ], 422);
+        }
+
+        $user->hash_password = Hash::make($validated['new_password']);
+        $user->save();
+
+        return response()->json([
+            'message' => 'Password updated successfully in database.',
+        ]);
+    }
+
+    /**
+     * Verify email and record timestamp in users table.
+     */
+    public function verifyEmail(Request $request)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        $user->email_verified_at = now();
+        $user->save();
+
+        return response()->json([
+            'message' => 'Email verified successfully',
+            'email_verified_at' => $user->email_verified_at,
         ]);
     }
 

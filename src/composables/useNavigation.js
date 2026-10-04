@@ -7,6 +7,7 @@ const sectionHashMap = {
   savedSection: '#saved',
   schoolDetailsSection: '#details',
   routesSection: '#routes',
+  settingsSection: '#settings',
 }
 
 const hashSectionMap = {
@@ -15,6 +16,7 @@ const hashSectionMap = {
   saved: 'savedSection',
   details: 'schoolDetailsSection',
   routes: 'routesSection',
+  settings: 'settingsSection',
 }
 
 function getInitialSection() {
@@ -30,7 +32,6 @@ function getInitialSection() {
   return 'homeSection'
 }
 
-const activePage = ref('student')
 const activeSection = ref(getInitialSection())
 
 // Initialize URL and popstate listeners
@@ -59,8 +60,6 @@ if (typeof window !== 'undefined') {
 }
 
 export function useNavigation() {
-  const { openAuthModal } = useAuth()
-
   function showSection(sectionId, { pushHistory = true } = {}) {
     if (activeSection.value === sectionId) return
     activeSection.value = sectionId
@@ -71,28 +70,12 @@ export function useNavigation() {
       } else {
         window.history.replaceState({ section: sectionId }, '', hash)
       }
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-    }
-  }
-
-  function setPage(page, { replace = false } = {}) {
-    if (page === 'login') {
-      openAuthModal('login')
-      return
-    }
-    activePage.value = page
-    if (typeof window !== 'undefined') {
-      if (replace) {
-        window.history.replaceState({ section: activeSection.value }, '', '#' + page)
-      }
-      window.scrollTo({ top: 0, behavior: 'smooth' })
+      window.scrollTo(0, 0)
     }
   }
 
   return {
-    activePage,
     activeSection,
     showSection,
-    setPage,
   }
 }

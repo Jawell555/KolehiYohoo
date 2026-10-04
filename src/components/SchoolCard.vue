@@ -27,8 +27,11 @@ defineEmits(['view', 'toggle-save'])
     <div class="school-body">
       <span class="school-tag">{{ tag }}</span>
       <h3>{{ school.name }}</h3>
-      <p>{{ school.location }}</p>
-      <p>{{ school.description }}</p>
+      <p>{{ school.address || 'Address not yet available' }}</p>
+      <p>
+        <template v-if="school.institution_type">{{ school.institution_type }} · </template>
+        {{ school.courses_count ?? school.courses?.length ?? 0 }} program{{ (school.courses_count ?? school.courses?.length ?? 0) === 1 ? '' : 's' }} offered
+      </p>
       <div class="card-actions">
         <button type="button" class="view-btn" @click="$emit('view', school)">View School</button>
         <button
@@ -45,4 +48,11 @@ defineEmits(['view', 'toggle-save'])
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+.school-tag {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+</style>

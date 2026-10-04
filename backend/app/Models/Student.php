@@ -15,12 +15,44 @@ class Student extends Model
 
     protected $fillable = [
         'user_id',
-        'f_name',
-        'l_name',
+        'first_name',
+        'last_name',
         'address',
         'school_name',
+        'contact_no',
         'created_at',
     ];
+
+    public function getFNameAttribute()
+    {
+        return $this->first_name;
+    }
+
+    public function setFNameAttribute($value)
+    {
+        $this->attributes['first_name'] = $value;
+    }
+
+    public function getLNameAttribute()
+    {
+        return $this->last_name;
+    }
+
+    public function setLNameAttribute($value)
+    {
+        $this->attributes['last_name'] = $value;
+    }
+
+    public function getPhoneAttribute()
+    {
+        return $this->contact_no;
+    }
+
+    public function setPhoneAttribute($value)
+    {
+        $this->attributes['contact_no'] = $value;
+    }
+
 
     protected function casts(): array
     {
