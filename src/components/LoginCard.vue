@@ -37,11 +37,18 @@ const signupForm = reactive({
 
 const institutionForm = reactive({
   schoolName: '',
-  repName: '',
+  firstName: '',
+  lastName: '',
   email: '',
   phone: '',
   notes: '',
-  password: '',
+})
+
+const showPassword = reactive({
+  studentLogin: false,
+  studentSignup: false,
+  studentSignupConfirm: false,
+  instLogin: false,
 })
 
 function resetForms() {
@@ -54,11 +61,15 @@ function resetForms() {
   signupForm.password = ''
   signupForm.confirmPassword = ''
   institutionForm.schoolName = ''
-  institutionForm.repName = ''
+  institutionForm.firstName = ''
+  institutionForm.lastName = ''
   institutionForm.email = ''
   institutionForm.phone = ''
   institutionForm.notes = ''
-  institutionForm.password = ''
+  showPassword.studentLogin = false
+  showPassword.studentSignup = false
+  showPassword.studentSignupConfirm = false
+  showPassword.instLogin = false
 }
 
 function handleRoleSelect(role) {
@@ -112,11 +123,12 @@ async function onInstitutionLogin() {
 async function onInstitutionVerification() {
   const success = await submitInstitutionVerification({
     schoolName: institutionForm.schoolName,
-    repName: institutionForm.repName,
+    firstName: institutionForm.firstName,
+    lastName: institutionForm.lastName,
+    repName: `${institutionForm.firstName} ${institutionForm.lastName}`.trim(),
     email: institutionForm.email,
     phone: institutionForm.phone,
     notes: institutionForm.notes,
-    password: institutionForm.password,
   })
   if (success) {
     resetForms()
@@ -280,16 +292,34 @@ function onForgotPassword() {
         <div class="form-group">
           <div class="form-label-row">
             <label for="studentLoginPassword">Password</label>
-            <a href="#" class="forgot-link" @click.prevent="onForgotPassword">Forgot Password?</a>
+            <a href="#" class="forgot-link" tabindex="-1" @click.prevent="onForgotPassword">Forgot Password?</a>
           </div>
-          <input
-            id="studentLoginPassword"
-            v-model="loginForm.password"
-            type="password"
-            placeholder="••••••••"
-            required
-            autocomplete="current-password"
-          />
+          <div class="password-input-wrapper">
+            <input
+              id="studentLoginPassword"
+              v-model="loginForm.password"
+              :type="showPassword.studentLogin ? 'text' : 'password'"
+              placeholder="••••••••"
+              required
+              autocomplete="current-password"
+            />
+            <button
+              type="button"
+              class="password-toggle-btn"
+              tabindex="-1"
+              :aria-label="showPassword.studentLogin ? 'Hide password' : 'Show password'"
+              @click="showPassword.studentLogin = !showPassword.studentLogin"
+            >
+              <svg v-if="!showPassword.studentLogin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+              <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                <line x1="1" y1="1" x2="23" y2="23" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <button type="submit" class="primary-btn auth-submit-btn" :disabled="isSubmitting">
@@ -350,26 +380,62 @@ function onForgotPassword() {
 
         <div class="form-group">
           <label for="studentSignupPassword">Password</label>
-          <input
-            id="studentSignupPassword"
-            v-model="signupForm.password"
-            type="password"
-            placeholder="••••••••"
-            required
-            autocomplete="new-password"
-          />
+          <div class="password-input-wrapper">
+            <input
+              id="studentSignupPassword"
+              v-model="signupForm.password"
+              :type="showPassword.studentSignup ? 'text' : 'password'"
+              placeholder="••••••••"
+              required
+              autocomplete="new-password"
+            />
+            <button
+              type="button"
+              class="password-toggle-btn"
+              tabindex="-1"
+              :aria-label="showPassword.studentSignup ? 'Hide password' : 'Show password'"
+              @click="showPassword.studentSignup = !showPassword.studentSignup"
+            >
+              <svg v-if="!showPassword.studentSignup" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+              <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                <line x1="1" y1="1" x2="23" y2="23" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <div class="form-group">
           <label for="studentConfirmPassword">Confirm Password</label>
-          <input
-            id="studentConfirmPassword"
-            v-model="signupForm.confirmPassword"
-            type="password"
-            placeholder="••••••••"
-            required
-            autocomplete="new-password"
-          />
+          <div class="password-input-wrapper">
+            <input
+              id="studentConfirmPassword"
+              v-model="signupForm.confirmPassword"
+              :type="showPassword.studentSignupConfirm ? 'text' : 'password'"
+              placeholder="••••••••"
+              required
+              autocomplete="new-password"
+            />
+            <button
+              type="button"
+              class="password-toggle-btn"
+              tabindex="-1"
+              :aria-label="showPassword.studentSignupConfirm ? 'Hide password' : 'Show password'"
+              @click="showPassword.studentSignupConfirm = !showPassword.studentSignupConfirm"
+            >
+              <svg v-if="!showPassword.studentSignupConfirm" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+              <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                <line x1="1" y1="1" x2="23" y2="23" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <button type="submit" class="primary-btn auth-submit-btn" :disabled="isSubmitting">
@@ -406,16 +472,34 @@ function onForgotPassword() {
         <div class="form-group">
           <div class="form-label-row">
             <label for="instLoginPassword">Password</label>
-            <a href="#" class="forgot-link" @click.prevent="onForgotPassword">Forgot Password?</a>
+            <a href="#" class="forgot-link" tabindex="-1" @click.prevent="onForgotPassword">Forgot Password?</a>
           </div>
-          <input
-            id="instLoginPassword"
-            v-model="loginForm.password"
-            type="password"
-            placeholder="••••••••"
-            required
-            autocomplete="current-password"
-          />
+          <div class="password-input-wrapper">
+            <input
+              id="instLoginPassword"
+              v-model="loginForm.password"
+              :type="showPassword.instLogin ? 'text' : 'password'"
+              placeholder="••••••••"
+              required
+              autocomplete="current-password"
+            />
+            <button
+              type="button"
+              class="password-toggle-btn"
+              tabindex="-1"
+              :aria-label="showPassword.instLogin ? 'Hide password' : 'Show password'"
+              @click="showPassword.instLogin = !showPassword.instLogin"
+            >
+              <svg v-if="!showPassword.instLogin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+              <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                <line x1="1" y1="1" x2="23" y2="23" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <button type="submit" class="primary-btn auth-submit-btn" :disabled="isSubmitting">
@@ -458,15 +542,29 @@ function onForgotPassword() {
           />
         </div>
 
-        <div class="form-group">
-          <label for="instRepName">Representative Name</label>
-          <input
-            id="instRepName"
-            v-model="institutionForm.repName"
-            type="text"
-            placeholder="Dr. Maria Santos"
-            required
-          />
+        <div class="form-row">
+          <div class="form-group">
+            <label for="instFirstName">Representative's First Name</label>
+            <input
+              id="instFirstName"
+              v-model="institutionForm.firstName"
+              type="text"
+              placeholder="Maria"
+              required
+              autocomplete="given-name"
+            />
+          </div>
+          <div class="form-group">
+            <label for="instLastName">Representative's Last Name</label>
+            <input
+              id="instLastName"
+              v-model="institutionForm.lastName"
+              type="text"
+              placeholder="Santos"
+              required
+              autocomplete="family-name"
+            />
+          </div>
         </div>
 
         <div class="form-group">
@@ -498,18 +596,6 @@ function onForgotPassword() {
             v-model="institutionForm.notes"
             type="text"
             placeholder="Main Campus"
-          />
-        </div>
-
-        <div class="form-group">
-          <label for="instPassword">Password</label>
-          <input
-            id="instPassword"
-            v-model="institutionForm.password"
-            type="password"
-            placeholder="•••••••• (min 6 characters)"
-            required
-            autocomplete="new-password"
           />
         </div>
 
@@ -611,5 +697,39 @@ function onForgotPassword() {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.password-input-wrapper input {
+  width: 100%;
+  padding-right: 42px !important;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #94a3b8;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.password-toggle-btn:hover {
+  color: var(--blue);
+  background: #f1f5f9;
 }
 </style>

@@ -17,14 +17,14 @@ const activeCategory = ref('all')
 
 const UNCATEGORIZED = 'none'
 
-// Reset the tabs whenever a different school is opened
+// Reset tabs on school change
 watch(
   () => selectedSchool.value?.id,
   (newId, oldId) => {
     if (newId !== oldId) {
       activeTab.value = 'overview'
       activeCategory.value = 'all'
-      openRoutes() // resets the route form without navigating
+      openRoutes()
     }
   },
 )
@@ -35,7 +35,7 @@ function categoryKey(course) {
   return course.category ? String(course.category.id) : UNCATEGORIZED
 }
 
-// Categories offered by this school, built from its courses
+// Available course categories
 const categories = computed(() => {
   const map = new Map()
   for (const course of courses.value) {
@@ -94,7 +94,7 @@ function selectTab(key) {
       ← Back
     </button>
 
-    <!-- Skeleton School Profile Loading State -->
+    <!-- Loading skeleton -->
     <div v-if="isLoadingDetails" class="school-profile skeleton-profile-wrapper" aria-hidden="true">
       <div class="profile-header">
         <div class="skeleton skeleton-badge" style="width: 140px; margin-bottom: 12px;"></div>
@@ -124,7 +124,7 @@ function selectTab(key) {
       </div>
     </div>
 
-    <!-- Active School Profile -->
+    <!-- School profile -->
     <div v-else-if="selectedSchool" class="school-profile">
       <div class="profile-header">
         <p class="eyebrow">SCHOOL OVERVIEW</p>
@@ -132,7 +132,7 @@ function selectTab(key) {
         <p>{{ selectedSchool.address || selectedSchool.institution_type }}</p>
       </div>
 
-      <!-- Tab bar -->
+      <!-- Tabs -->
       <nav class="school-tabs" role="tablist">
         <button
           v-for="tab in tabs"
@@ -148,7 +148,7 @@ function selectTab(key) {
         </button>
       </nav>
 
-      <!-- OVERVIEW TAB -->
+      <!-- Overview tab -->
       <div v-if="activeTab === 'overview'" class="profile-body">
         <div class="profile-columns">
           <div>
@@ -204,7 +204,7 @@ function selectTab(key) {
         </div>
       </div>
 
-      <!-- AVAILABLE PROGRAMS TAB -->
+      <!-- Programs tab -->
       <div v-else-if="activeTab === 'programs'" class="programs-layout">
         <aside class="category-sidebar">
           <p class="category-sidebar-title">CHOOSE A CATEGORY</p>
@@ -267,7 +267,7 @@ function selectTab(key) {
         </div>
       </div>
 
-      <!-- POSSIBLE ROUTES TAB -->
+      <!-- Routes tab -->
       <div v-else-if="activeTab === 'routes'" class="profile-body">
         <SchoolRoutesPanel />
       </div>
@@ -286,7 +286,7 @@ function selectTab(key) {
   user-select: none;
 }
 
-/* ---------- Full-width layout ---------- */
+/* Full-width layout */
 #schoolDetailsSection.section {
   position: relative;
   padding: 0;
@@ -310,7 +310,7 @@ function selectTab(key) {
   margin: 100px 60px 60px;
 }
 
-/* ---------- Back button ---------- */
+/* Back button */
 .header-back-btn {
   position: absolute;
   top: 28px;
@@ -340,7 +340,7 @@ function selectTab(key) {
   color: #f87171;
 }
 
-/* ---------- Tab bar ---------- */
+/* Tab bar */
 .school-tabs {
   display: flex;
   justify-content: center;
@@ -385,7 +385,7 @@ function selectTab(key) {
   background: var(--blue);
 }
 
-/* ---------- Available Programs ---------- */
+/* Available programs */
 .programs-layout {
   display: grid;
   grid-template-columns: 270px 1fr;

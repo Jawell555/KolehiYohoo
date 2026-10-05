@@ -238,8 +238,73 @@ export function useAuth() {
     }
   }
 
+  async function loginAdmin(emailInput, passwordInput) {
+    if (isSubmitting.value) return false
+    authError.value = ''
+    authSuccess.value = ''
+    const email = (emailInput || '').trim()
+    const password = passwordInput || ''
+
+    if (!email || !password) {
+      authError.value = 'Please enter your administrator email and password.'
+      return false
+    }
+
+    try {
+      isSubmitting.value = true
+      const response = await fetch(`${API_BASE}/admin/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          role: 'admin',
+          role_id: 3,
+        }),
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        authError.value = data.message || 'Login Failed. Please check your credentials.'
+        return false
+      }
+
+      if (data.user?.role !== 'admin' && data.user?.role_id !== 3) {
+        authError.value = 'This account does not have administrator privileges.'
+        return false
+      }
+
+      localStorage.setItem('token', data.token)
+
+      const userData = {
+        id: data.user.id,
+        email: data.user.email,
+        name: data.user.name || 'System Administrator',
+        role: data.user.role || 'admin',
+        role_id: data.user.role_id || 3,
+        phone: data.user.phone || '',
+        email_verified: !!data.user.email_verified,
+        admin: data.user.admin,
+      }
+      currentUser.value = userData
+      currentRole.value = 'admin'
+      localStorage.setItem('user', JSON.stringify(userData))
+      return true
+    } catch {
+      authError.value = 'Network error connecting to backend'
+      return false
+    } finally {
+      isSubmitting.value = false
+    }
+  }
+
   async function submitInstitutionVerification({
     schoolName,
+    firstName,
+    lastName,
     repName,
     email,
     phone,
@@ -250,7 +315,9 @@ export function useAuth() {
     authError.value = ''
     authSuccess.value = ''
     const school = (schoolName || '').trim()
-    const rep = (repName || '').trim()
+    const first = (firstName || '').trim()
+    const last = (lastName || '').trim()
+    const rep = (first && last) ? `${first} ${last}` : (repName || first || last || '').trim()
     const officialEmail = (email || '').trim()
     const contactPhone = (phone || '').trim()
 
@@ -270,9 +337,13 @@ export function useAuth() {
         body: JSON.stringify({
           role: 'institution',
           school_name: school,
+          institution_name: school,
+          first_name: first,
+          last_name: last,
           rep_name: rep,
           email: officialEmail,
           phone: contactPhone,
+          contact_no: contactPhone,
           notes: notes || '',
           password: password || undefined,
         }),
@@ -284,11 +355,11 @@ export function useAuth() {
         return false
       }
 
-      authSuccess.value = `Thank you, ${rep}. Account created for ${school}! You can now log in below.`
+      authSuccess.value = `Thank you, ${first || rep}. Verification request for ${school} submitted! An administrator will review your application.`
 
       setTimeout(() => {
         currentAuthMode.value = 'login'
-      }, 2000)
+      }, 2500)
 
       return true
     } catch {
@@ -502,6 +573,7 @@ export function useAuth() {
     loginStudent,
     signupStudent,
     loginInstitution,
+    loginAdmin,
     submitInstitutionVerification,
     handleGoogleAuth,
     handleForgotPassword,

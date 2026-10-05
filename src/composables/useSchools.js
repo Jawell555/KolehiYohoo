@@ -5,7 +5,7 @@ import { useAuth } from './useAuth'
 const API_BASE = '/api'
 const SELECTED_SCHOOL_KEY = 'kolehiyohooSelectedSchoolId'
 
-// ---- Shared state (module-level so every component sees the same data) ----
+// Shared state
 const coursesList = ref([])
 const isLoadingCourses = ref(false)
 let coursesLoaded = false
@@ -15,7 +15,7 @@ const savedSchoolsList = ref([])
 const savedSchoolIds = ref([])
 
 const searchCourse = ref('')
-const selectedCourse = ref(null) // course picked from the dropdown ({ id, name, code })
+const selectedCourse = ref(null)
 const searchLocation = ref('')
 const searchType = ref('') // '' = both, 'public', 'private'
 const hasSearched = ref(false)
@@ -126,12 +126,11 @@ function initOnce() {
   if (initialized || typeof window === 'undefined') return
   initialized = true
 
-  // Remove the old browser-only saved list; saved schools now live in the database.
   localStorage.removeItem('kolehiyohooSavedSchools')
 
   loadCourses()
 
-  // Reload saved schools whenever the logged-in user changes (login / logout / switch).
+  // Reload saved schools on auth change
   const { currentUser } = useAuth()
   watch(
     () => currentUser.value?.id ?? null,
@@ -139,7 +138,7 @@ function initOnce() {
     { immediate: true },
   )
 
-  // Restore the selected school after a page refresh on #details / #routes.
+  // Restore selected school on page refresh
   const storedId = sessionStorage.getItem(SELECTED_SCHOOL_KEY)
   if (storedId && !selectedSchool.value) {
     isLoadingDetails.value = true
@@ -174,7 +173,7 @@ export function useSchools() {
     })
   })
 
-  // Label shown on each result card for the last applied course filter
+  // Active course filter label
   const courseTag = computed(() => appliedCourseTag.value)
 
   const totalPages = computed(() =>
@@ -208,7 +207,6 @@ export function useSchools() {
   }
 
   function onCourseInput() {
-    // Typing after picking a course turns it back into a free-text search
     if (selectedCourse.value && searchCourse.value !== selectedCourse.value.name) {
       selectedCourse.value = null
     }
@@ -219,7 +217,7 @@ export function useSchools() {
     isCourseDropdownOpen.value = false
   }
 
-  // Clears the Find Schools form and shows every school again
+  // Reset search form
   function resetSearch() {
     searchCourse.value = ''
     selectedCourse.value = null
@@ -233,7 +231,7 @@ export function useSchools() {
     return runSearch()
   }
 
-  // Fetches schools for the current filters. No filters = all schools (A-Z).
+  // Fetch schools based on active filters
   async function runSearch() {
     const course = searchCourse.value.trim()
     const loc = searchLocation.value.trim()
@@ -363,14 +361,11 @@ export function useSchools() {
     }
   }
 
-  function openRoutes(onNavigate) {
+  function openRoutes() {
     if (!selectedSchool.value) return
     hasRouteGenerated.value = false
     routeStartLocation.value = ''
     isGeneratingRoutes.value = false
-    if (onNavigate) {
-      onNavigate('routesSection')
-    }
   }
 
   function generateRoute() {

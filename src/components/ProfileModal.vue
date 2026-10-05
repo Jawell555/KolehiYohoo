@@ -85,14 +85,14 @@ onUnmounted(() => {
           </svg>
         </button>
 
-        <!-- Profile Top Banner (Roblox-style Hero Header) -->
+        <!-- Profile banner -->
         <div class="profile-hero-banner">
           <div class="profile-avatar-badge">
             <img :src="emptyAvatar" alt="Profile Avatar" class="profile-avatar-img" />
           </div>
         </div>
 
-        <!-- User Identity Info & Edit Profile Action Row -->
+        <!-- User info -->
         <div class="profile-user-info-row">
           <div class="profile-user-details">
             <h2 id="profileModalTitle" class="profile-name">
@@ -122,7 +122,7 @@ onUnmounted(() => {
           </button>
         </div>
 
-        <!-- Quick Stats Grid (Roblox-inspired stats bar) -->
+        <!-- Stats -->
         <div class="profile-stats-grid">
           <div class="stat-card">
             <span class="stat-number">{{ savedSchoolIds.length }}</span>
@@ -142,7 +142,7 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!-- Details Section -->
+        <!-- Details -->
         <div class="profile-details-section">
           <h4 class="section-title">Academic & Personal Details</h4>
           <div class="details-list">
@@ -167,7 +167,7 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!-- Bottom Actions -->
+        <!-- Actions -->
         <div class="profile-modal-actions">
           <button type="button" class="profile-btn-explore" @click="handleExploreSchools">
             Explore Schools

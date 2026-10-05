@@ -22,7 +22,6 @@ function handleViewSchool(school) {
 <template>
   <section id="savedSection" class="section">
     <div class="section-heading">
-      <!-- <p class="eyebrow">MY PROFILE</p> -->
       <h1>Saved Schools</h1>
       <p>Keep track of the schools you may want to consider.</p>
     </div>
@@ -41,7 +40,7 @@ function handleViewSchool(school) {
       <p>Log in with a student account to save and track schools.</p>
     </div>
 
-    <!-- Skeleton Loading Grid -->
+    <!-- Loading skeleton -->
     <div v-else-if="isLoadingSaved" class="school-grid">
       <SkeletonSchoolCard v-for="i in 3" :key="i" />
     </div>

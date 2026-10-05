@@ -14,6 +14,7 @@ Route::middleware('throttle:10,1')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/student/login', [AuthController::class, 'loginStudent']);
     Route::post('/institution/login', [AuthController::class, 'loginInstitution']);
+    Route::post('/admin/login', [AuthController::class, 'loginAdmin']);
 });
 
 // Public School Directory Routes
@@ -24,7 +25,6 @@ Route::get('/courses', [CourseController::class, 'index']);
 // Authenticated Routes
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'me']);
-    Route::get('/me', [AuthController::class, 'me']);
     Route::match(['post', 'put'], '/user/profile', [AuthController::class, 'updateProfile']);
     Route::post('/user/password', [AuthController::class, 'changePassword'])->middleware('throttle:6,1');
     Route::post('/user/verify-email', [AuthController::class, 'verifyEmail']);
@@ -35,12 +35,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/saved-universities/{id}', [SavedUniversityController::class, 'store'])->whereNumber('id');
     Route::delete('/saved-universities/{id}', [SavedUniversityController::class, 'destroy'])->whereNumber('id');
 
-    //Admin Routes
-    Route::middleware('role:admin')->prefix('admin')->group(function(){
-        Route::get('/pending-institutions', [AdminController::class,'pendingInstitutions']);
-        Route::patch('/institutions/{id}/approve', [AdminController::class,'approveInstitution'])->whereNumber('id');
-        Route::delete('/institutions/{id}/reject',[AdminController::class,'rejectInstitution'])->whereNumber('id');
-
+    // Admin Routes
+    Route::middleware('role:admin')->prefix('admin')->group(function () {
+        Route::get('/stats', [AdminController::class, 'stats']);
+        Route::get('/pending-institutions', [AdminController::class, 'pendingInstitutions']);
+        Route::patch('/institutions/{id}/approve', [AdminController::class, 'approveInstitution'])->whereNumber('id');
+        Route::delete('/institutions/{id}/reject', [AdminController::class, 'rejectInstitution'])->whereNumber('id');
+        Route::put('/universities/{id}', [AdminController::class, 'updateUniversity'])->whereNumber('id');
     });
 
     //Institution Portal Routes

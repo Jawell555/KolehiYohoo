@@ -4,11 +4,10 @@ import { useSchools } from '../composables/useSchools'
 import { useNavigation } from '../composables/useNavigation'
 import SchoolCard from './SchoolCard.vue'
 import SkeletonSchoolCard from './SkeletonSchoolCard.vue'
+import AppSelect from './AppSelect.vue'
 
 const dropdownRef = ref(null)
-const typeDropdownRef = ref(null)
 const resultsRef = ref(null)
-const isTypeDropdownOpen = ref(false)
 
 const TYPE_OPTIONS = [
   { value: '', label: 'Public & Private' },
@@ -47,17 +46,15 @@ const {
 
 const { showSection, activeSection } = useNavigation()
 
-// Pages that are "inside" a search flow; coming back from them keeps the results.
-const SEARCH_FLOW_SECTIONS = ['schoolDetailsSection', 'routesSection']
+const SEARCH_FLOW_SECTIONS = ['schoolDetailsSection']
 
 watch(activeSection, (now, prev) => {
   if (now === 'schoolsSection' && !SEARCH_FLOW_SECTIONS.includes(prev)) {
-    isTypeDropdownOpen.value = false
     resetSearch()
   }
 })
 
-// Page numbers to render, e.g. [1, 2, 3] or [1, '…', 4, 5, 6, '…', 10]
+// Pagination item list
 const pageItems = computed(() => {
   const total = totalPages.value
   const current = currentPage.value
@@ -76,26 +73,12 @@ const pageItems = computed(() => {
 function changePage(page) {
   if (page === currentPage.value || page < 1 || page > totalPages.value) return
   goToPage(page)
-  // Bring the top of the results back into view
+  // Scroll to results top
   const el = resultsRef.value
   if (el) {
     const top = el.getBoundingClientRect().top + window.scrollY - 95
     window.scrollTo({ top, behavior: 'smooth' })
   }
-}
-
-const selectedTypeLabel = computed(
-  () => TYPE_OPTIONS.find((o) => o.value === searchType.value)?.label || TYPE_OPTIONS[0].label,
-)
-
-function toggleTypeDropdown() {
-  isTypeDropdownOpen.value = !isTypeDropdownOpen.value
-  if (isTypeDropdownOpen.value) closeCourseDropdown()
-}
-
-function selectType(value) {
-  searchType.value = value
-  isTypeDropdownOpen.value = false
 }
 
 function handleViewSchool(school) {
@@ -106,13 +89,9 @@ function handleOutsideClick(event) {
   if (isCourseDropdownOpen.value && dropdownRef.value && !dropdownRef.value.contains(event.target)) {
     closeCourseDropdown()
   }
-  if (isTypeDropdownOpen.value && typeDropdownRef.value && !typeDropdownRef.value.contains(event.target)) {
-    isTypeDropdownOpen.value = false
-  }
 }
 
 onMounted(() => {
-  // Fresh page load / refresh always starts with an empty search (all schools).
   resetSearch()
   document.addEventListener('click', handleOutsideClick)
 })
@@ -125,7 +104,6 @@ onUnmounted(() => {
 <template>
   <section id="schoolsSection" class="section">
     <div class="section-heading">
-      <!-- <p class="eyebrow">SCHOOL FINDER</p> -->
       <h1>Find schools by program</h1>
       <p>Choose a degree program to see schools that offer it.</p>
     </div>
@@ -167,7 +145,7 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <!-- 3-row visible scrollable dropdown menu -->
+          <!-- Dropdown menu -->
           <div v-if="isCourseDropdownOpen" class="course-dropdown-menu">
             <div
               v-for="course in filteredCourses"
@@ -191,35 +169,11 @@ onUnmounted(() => {
 
       <div class="form-group">
         <label id="schoolTypeLabel">School Type <span>(Optional)</span></label>
-        <div ref="typeDropdownRef" class="course-dropdown-wrapper">
-          <button
-            type="button"
-            class="type-trigger"
-            :class="{ open: isTypeDropdownOpen }"
-            aria-haspopup="listbox"
-            aria-labelledby="schoolTypeLabel"
-            :aria-expanded="isTypeDropdownOpen"
-            @click="toggleTypeDropdown"
-            @keydown.esc="isTypeDropdownOpen = false"
-          >
-            <span class="type-trigger-text">{{ selectedTypeLabel }}</span>
-            <span class="course-arrow-btn" :class="{ open: isTypeDropdownOpen }" aria-hidden="true">▼</span>
-          </button>
-
-          <div v-if="isTypeDropdownOpen" class="course-dropdown-menu" role="listbox">
-            <div
-              v-for="option in TYPE_OPTIONS"
-              :key="option.value || 'all'"
-              class="course-dropdown-item"
-              :class="{ selected: searchType === option.value }"
-              role="option"
-              :aria-selected="searchType === option.value"
-              @click="selectType(option.value)"
-            >
-              <span class="course-name">{{ option.label }}</span>
-            </div>
-          </div>
-        </div>
+        <AppSelect
+          v-model="searchType"
+          :options="TYPE_OPTIONS"
+          aria-labelledby="schoolTypeLabel"
+        />
       </div>
 
       <div class="form-group">
@@ -263,12 +217,12 @@ onUnmounted(() => {
       {{ searchMessage }}
     </div>
 
-    <!-- Skeleton Loading Grid when searching -->
+    <!-- Loading skeleton -->
     <div v-if="isSearchingSchools" class="school-grid">
       <SkeletonSchoolCard v-for="i in 6" :key="i" />
     </div>
 
-    <!-- School Results Grid (all schools by default, filtered after a search) -->
+    <!-- School results -->
     <template v-else-if="matchedSchools.length > 0">
       <div class="school-grid">
         <SchoolCard
@@ -323,37 +277,6 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-.type-trigger {
-  width: 100%;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 0 10px 0 15px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: #fff;
-  font-family: inherit;
-  font-size: 14px;
-  color: var(--text);
-  text-align: left;
-  cursor: pointer;
-  outline: none;
-  box-sizing: border-box;
-}
-
-.type-trigger:focus-visible,
-.type-trigger.open {
-  border-color: var(--blue-light);
-}
-
-.type-trigger-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .search-btn {
   padding: 0;
   display: inline-flex;

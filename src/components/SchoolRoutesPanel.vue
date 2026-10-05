@@ -33,7 +33,7 @@ const { selectedSchool, routeStartLocation, hasRouteGenerated, isGeneratingRoute
       <div class="route-options">
         <h2>Possible Routes</h2>
 
-        <!-- Skeleton Routes Loading State -->
+        <!-- Loading skeleton -->
         <div v-if="isGeneratingRoutes">
           <div v-for="n in 3" :key="n" class="route-card skeleton-route-card" aria-hidden="true">
             <div class="skeleton skeleton-title" style="width: 50%; height: 20px;"></div>

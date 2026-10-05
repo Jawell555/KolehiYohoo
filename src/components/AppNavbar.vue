@@ -2,16 +2,32 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useAuth } from '../composables/useAuth'
 import { useNavigation } from '../composables/useNavigation'
+import { useAdmin } from '../composables/useAdmin'
 import ProfileModal from './ProfileModal.vue'
 import emptyAvatar from '../assets/empty.png'
 
 const { currentUser, logout, openAuthModal } = useAuth()
 const { activeSection, showSection } = useNavigation()
+const { adminTab, stats, setAdminTab } = useAdmin()
 
 const isLogoutConfirmOpen = ref(false)
 const isUserDropdownOpen = ref(false)
 const isProfileModalOpen = ref(false)
 const userMenuRef = ref(null)
+
+function handleBrandClick() {
+  if (currentUser.value?.role === 'admin') {
+    setAdminTab('dashboard')
+    showSection('adminSection')
+  } else {
+    showSection('homeSection')
+  }
+}
+
+function navigateAdmin(tab) {
+  setAdminTab(tab)
+  showSection('adminSection')
+}
 
 function toggleUserDropdown() {
   isUserDropdownOpen.value = !isUserDropdownOpen.value
@@ -47,7 +63,11 @@ function closeLogoutModal() {
 function confirmLogout() {
   isLogoutConfirmOpen.value = false
   logout()
-  if (activeSection.value === 'savedSection' || activeSection.value === 'settingsSection') {
+  if (
+    activeSection.value === 'savedSection' ||
+    activeSection.value === 'settingsSection' ||
+    activeSection.value === 'adminSection'
+  ) {
     showSection('homeSection')
   }
 }
@@ -95,12 +115,42 @@ onUnmounted(() => {
         class="nav-brand"
         role="button"
         tabindex="0"
-        @click="showSection('homeSection')"
-        @keydown.enter="showSection('homeSection')"
+        @click="handleBrandClick"
+        @keydown.enter="handleBrandClick"
       >
         KolehiYohoo!
       </div>
-      <nav class="nav-links">
+
+      <!-- Admin Navigation -->
+      <nav v-if="currentUser?.role === 'admin'" class="nav-links">
+        <a
+          href="#"
+          :class="{ active: activeSection === 'adminSection' && adminTab === 'dashboard' }"
+          @click.prevent="navigateAdmin('dashboard')"
+        >
+          Dashboard
+        </a>
+        <a
+          href="#"
+          :class="{ active: activeSection === 'adminSection' && adminTab === 'schools' }"
+          @click.prevent="navigateAdmin('schools')"
+        >
+          Schools
+        </a>
+        <a
+          href="#"
+          :class="{ active: activeSection === 'adminSection' && adminTab === 'requests' }"
+          @click.prevent="navigateAdmin('requests')"
+        >
+          Requests
+          <span v-if="stats.pending_requests > 0" class="nav-badge-alert">
+            {{ stats.pending_requests }}
+          </span>
+        </a>
+      </nav>
+
+      <!-- Student / Public Navigation -->
+      <nav v-else-if="activeSection !== 'adminSection'" class="nav-links">
         <a
           href="#"
           :class="{ active: activeSection === 'homeSection' }"
@@ -143,6 +193,7 @@ onUnmounted(() => {
             </span>
             <span class="user-btn-name">
               {{ currentUser?.name ? currentUser.name.split(' ')[0] : 'Account' }}
+              <small v-if="currentUser?.role === 'admin'" class="role-badge-pill">Admin</small>
             </span>
             <svg
               class="user-btn-chevron"
@@ -163,6 +214,7 @@ onUnmounted(() => {
           <!-- Floating Dropdown Choices: Profile, Settings, Sign Out -->
           <div v-if="isUserDropdownOpen" class="nav-user-dropdown">
             <button
+              v-if="currentUser?.role !== 'admin'"
               type="button"
               class="dropdown-item"
               @click="handleProfileClick"
@@ -235,7 +287,7 @@ onUnmounted(() => {
       </template>
 
       <!-- Visitor / Guest Controls -->
-      <template v-else>
+      <template v-else-if="activeSection !== 'adminSection'">
         <button type="button" class="nav-login-btn" @click="openAuthModal('login')">Log In</button>
         <button type="button" class="nav-signup-btn" @click="openAuthModal('signup')">
           Sign Up
@@ -244,13 +296,13 @@ onUnmounted(() => {
     </div>
   </header>
 
-  <!-- Student Profile Modal (Private Roblox-style Personal Hub) -->
+  <!-- Profile Modal -->
   <ProfileModal
     :is-open="isProfileModalOpen"
     @close="isProfileModalOpen = false"
   />
 
-  <!-- Option A: Logout Confirmation Modal -->
+  <!-- Logout Modal -->
   <Teleport to="body">
     <div
       v-if="isLogoutConfirmOpen"
@@ -335,6 +387,27 @@ onUnmounted(() => {
 
 .nav-brand:hover {
   opacity: 0.9;
+}
+
+.nav-badge-alert {
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 10px;
+  margin-left: 4px;
+}
+
+.role-badge-pill {
+  font-size: 10px;
+  font-weight: 800;
+  background: #eff6ff;
+  color: var(--blue);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 4px;
+  vertical-align: middle;
 }
 
 .nav-login-btn {
@@ -522,7 +595,7 @@ onUnmounted(() => {
   }
 }
 
-/* Option A: Logout Confirmation Modal Styles */
+/* Logout Modal */
 .logout-modal-overlay {
   position: fixed;
   inset: 0;

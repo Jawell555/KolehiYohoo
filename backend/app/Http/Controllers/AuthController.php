@@ -164,6 +164,15 @@ class AuthController extends Controller
     }
 
     /**
+     * Log in specifically as an Admin.
+     */
+    public function loginAdmin(Request $request)
+    {
+        $request->merge(['role' => 'admin', 'role_id' => 3]);
+        return $this->login($request);
+    }
+
+    /**
      * Log in user (handles Student, Institution, Admin).
      */
     public function login(Request $request)

@@ -6,8 +6,8 @@ const sectionHashMap = {
   schoolsSection: '#schools',
   savedSection: '#saved',
   schoolDetailsSection: '#details',
-  routesSection: '#routes',
   settingsSection: '#settings',
+  adminSection: '#admin',
 }
 
 const hashSectionMap = {
@@ -15,8 +15,9 @@ const hashSectionMap = {
   schools: 'schoolsSection',
   saved: 'savedSection',
   details: 'schoolDetailsSection',
-  routes: 'routesSection',
+  routes: 'schoolDetailsSection',
   settings: 'settingsSection',
+  admin: 'adminSection',
 }
 
 function getInitialSection() {

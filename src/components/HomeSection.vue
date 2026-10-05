@@ -10,17 +10,17 @@ const isInstitution = computed(() => {
   return currentUser.value && (currentUser.value.role === 'institution' || currentUser.value.role_id === 2)
 })
 
-// const eyebrowText = computed(() => {
-//   if (currentUser.value) {
-//     return isInstitution.value ? 'INSTITUTION PORTAL' : 'STUDENT DASHBOARD'
-//   }
-//   return 'DISCOVER YOUR PATH'
-// })
+const eyebrowText = computed(() => {
+  if (currentUser.value) {
+    return isInstitution.value ? 'INSTITUTION PORTAL' : 'STUDENT DASHBOARD'
+  }
+  return 'DISCOVER YOUR PATH'
+})
 </script>
 
 <template>
   <section id="homeSection" class="section">
-    <!-- Institution Partner Banner (only shown if signed in as institution) -->
+    <!-- Institution partner banner -->
     <div v-if="isInstitution" class="institution-banner">
       <div class="banner-icon">🏛️</div>
       <div class="banner-text">
@@ -32,7 +32,7 @@ const isInstitution = computed(() => {
       </div>
     </div>
 
-    <!-- Hero Section / Landing Page Header -->
+    <!-- Hero section -->
     <div class="hero">
       <div class="hero-text">
         <p class="eyebrow">{{ eyebrowText }}</p>
@@ -64,7 +64,7 @@ const isInstitution = computed(() => {
       </div>
     </div>
 
-    <!-- Quick Info Cards -->
+    <!-- Quick info cards -->
     <div class="quick-info">
       <div class="info-box clickable" @click="showSection('schoolsSection')">
         <div class="info-box-header">

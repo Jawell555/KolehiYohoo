@@ -23,37 +23,6 @@ class Student extends Model
         'created_at',
     ];
 
-    public function getFNameAttribute()
-    {
-        return $this->first_name;
-    }
-
-    public function setFNameAttribute($value)
-    {
-        $this->attributes['first_name'] = $value;
-    }
-
-    public function getLNameAttribute()
-    {
-        return $this->last_name;
-    }
-
-    public function setLNameAttribute($value)
-    {
-        $this->attributes['last_name'] = $value;
-    }
-
-    public function getPhoneAttribute()
-    {
-        return $this->contact_no;
-    }
-
-    public function setPhoneAttribute($value)
-    {
-        $this->attributes['contact_no'] = $value;
-    }
-
-
     protected function casts(): array
     {
         return [

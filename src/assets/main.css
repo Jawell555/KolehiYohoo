@@ -29,38 +29,6 @@ body {
   min-height: 100vh;
 }
 
-#loginPage {
-  background: linear-gradient(135deg, #12345b, #4d8dcc);
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 30px;
-}
-
-.login-container {
-  width: 100%;
-  max-width: 950px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 70px;
-  align-items: center;
-}
-
-.brand h1 {
-  font-family: 'Playfair Display', serif;
-  font-size: 56px;
-  color: white;
-  margin-bottom: 15px;
-}
-
-.brand p {
-  color: #e3f0ff;
-  font-size: 17px;
-  line-height: 1.7;
-  max-width: 350px;
-}
-
 /* Login Card */
 .login-card {
   background: white;
@@ -650,7 +618,7 @@ main {
   margin-bottom: 30px;
 }
 
-/* Keep the inputs and the Search button on the same baseline/height */
+/* Form control alignment */
 .search-panel .form-group {
   margin-bottom: 0;
 }
@@ -672,7 +640,7 @@ main {
   margin-bottom: 20px;
 }
 
-/* 3-Row Scrollable Course Dropdown */
+/* Course dropdown */
 .course-dropdown-wrapper {
   position: relative;
   width: 100%;
@@ -1210,7 +1178,7 @@ main {
   font-weight: 700;
 }
 
-/* Toast Notification - Prominent Top Center */
+/* Toast notification */
 .toast {
   position: fixed;
   top: 24px;
@@ -1354,9 +1322,7 @@ main {
   }
 }
 
-/* ==========================================================================
-   Skeleton Screens & Shimmer Utilities
-   ========================================================================== */
+/* Skeleton loaders */
 .skeleton {
   background: linear-gradient(
     90deg,

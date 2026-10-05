@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, reactive } from 'vue'
 import { useAuth } from '../composables/useAuth'
 import { showToast } from '../composables/useToast'
 
@@ -8,7 +8,7 @@ const { currentUser, updateUserProfile, changeUserPassword } = useAuth()
 // Active Settings Tab: 'account' or 'preferences'
 const activeTab = ref('account')
 
-// Ghost Theme preference
+// Theme preference
 const currentTheme = ref('light')
 
 function selectGhostTheme(theme) {
@@ -56,9 +56,7 @@ const isEmailVerified = computed(() => {
   return !!(currentUser.value?.email_verified || currentUser.value?.email_verified_at)
 })
 
-// ============================================================================
-// Edit Modal State & "Are You Sure?" Confirmation Logic
-// ============================================================================
+// Edit modal state
 const isEditModalOpen = ref(false)
 const isConfirmingSave = ref(false)
 const isSaving = ref(false)
@@ -83,6 +81,11 @@ const passwordForm = ref({
   confirmPassword: '',
 })
 const passwordError = ref('')
+const showPasswords = reactive({
+  current: false,
+  new: false,
+  confirm: false,
+})
 
 const fieldConfigs = {
   firstName: {
@@ -191,6 +194,9 @@ function openEditModal(key) {
     editModalValue.value = displayPhone.value
   } else if (key === 'password') {
     passwordForm.value = { currentPassword: '', newPassword: '', confirmPassword: '' }
+    showPasswords.current = false
+    showPasswords.new = false
+    showPasswords.confirm = false
   }
 
   isEditModalOpen.value = true
@@ -201,6 +207,9 @@ function closeEditModal() {
   isConfirmingSave.value = false
   passwordError.value = ''
   modalError.value = ''
+  showPasswords.current = false
+  showPasswords.new = false
+  showPasswords.confirm = false
 }
 
 function clearModalValue() {
@@ -208,7 +217,7 @@ function clearModalValue() {
   modalError.value = ''
 }
 
-// User clicks "Save" -> First validate, then show "Confirmation" step
+// Validate before confirmation
 function requestSaveConfirmation() {
   modalError.value = ''
   const key = currentEditKey.value
@@ -233,7 +242,7 @@ function requestSaveConfirmation() {
     return
   }
 
-  // Phone number validation: must start with 09, 11 digits long, numbers only
+  // Validate phone format
   if (key === 'phone') {
     if (!/^09\d{9}$/.test(trimmed)) {
       modalError.value = 'Enter a valid phone number!'
@@ -241,7 +250,7 @@ function requestSaveConfirmation() {
     }
   }
 
-  // Email format validation
+  // Validate email format
   if (key === 'email') {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
       modalError.value = 'Please enter a valid email address.'
@@ -252,12 +261,11 @@ function requestSaveConfirmation() {
   isConfirmingSave.value = true
 }
 
-// User cancels confirmation -> return to editing input
 function cancelSaveConfirmation() {
   isConfirmingSave.value = false
 }
 
-// User confirms "Yes, Save" -> Apply the changes directly to DB & state
+// Save changes
 async function executeSave() {
   if (isSaving.value) return
   isSaving.value = true
@@ -347,7 +355,7 @@ onUnmounted(() => {
 
 <template>
   <section id="settingsSection" class="section settings-page-section">
-    <!-- Clean Header -->
+    <!-- Header -->
     <div class="settings-header">
       <h1 class="settings-title">Settings</h1>
     </div>
@@ -410,9 +418,7 @@ onUnmounted(() => {
 
       <!-- Right Main Content Panel -->
       <div class="settings-content-card">
-        <!-- ======================================================== -->
-        <!-- TAB 1: ACCOUNT (Personal + Security)                     -->
-        <!-- ======================================================== -->
+        <!-- Account -->
         <div v-if="activeTab === 'account'" class="tab-panel">
           <!-- Personal Subgroup -->
           <div class="settings-group">
@@ -573,11 +579,11 @@ onUnmounted(() => {
 
           <div class="settings-card-divider"></div>
 
-          <!-- Security Subgroup -->
+          <!-- Security -->
           <div class="settings-group">
             <h2 class="group-heading">Security</h2>
 
-            <!-- Email Row with [Verify] Red Button if not verified -->
+            <!-- Email row -->
             <div class="roblox-setting-row">
               <div class="row-info">
                 <span class="row-label">Email:</span>
@@ -591,7 +597,7 @@ onUnmounted(() => {
                   Add Email
                 </button>
 
-                <!-- Red Verify Button right beside unverified email (inactive for now) -->
+                <!-- Verify button -->
                 <button
                   v-if="userEmail && !isEmailVerified"
                   type="button"
@@ -602,7 +608,7 @@ onUnmounted(() => {
                   Verify
                 </button>
 
-                <!-- Verified Pill if verified -->
+                <!-- Verified badge -->
                 <span v-else-if="userEmail && isEmailVerified" class="verified-pill">
                   <svg
                     width="12"
@@ -712,9 +718,7 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!-- ======================================================== -->
-        <!-- TAB 2: PREFERENCES (Dark/Light Mode)         -->
-        <!-- ======================================================== -->
+        <!-- Preferences -->
         <div v-else-if="activeTab === 'preferences'" class="tab-panel">
           <div class="settings-group">
             <h2 class="group-heading">Appearance</h2>
@@ -722,7 +726,7 @@ onUnmounted(() => {
             <div class="roblox-setting-row">
               <div class="row-info">
                 <span class="row-label">Theme:</span>
-                <!-- Clean Ghost Theme Selector -->
+                <!-- Theme Selector -->
                 <div class="ghost-theme-control">
                   <button
                     type="button"
@@ -785,9 +789,7 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- ============================================================== -->
-    <!-- EDIT POPUP MODAL ("Are you sure?")       -->
-    <!-- ============================================================== -->
+    <!-- Edit Modal -->
     <Teleport to="body">
       <div
         v-if="isEditModalOpen"
@@ -798,9 +800,9 @@ onUnmounted(() => {
         @click.self="closeEditModal"
       >
         <div class="edit-modal-card">
-          <!-- STEP 1: EDIT INPUT VIEW -->
+          <!-- Edit Form -->
           <template v-if="!isConfirmingSave">
-            <!-- Modal Header with Title & Circle (X) Button -->
+            <!-- Modal header -->
             <div class="edit-modal-header">
               <h3 id="editModalTitle" class="edit-modal-title">
                 {{ currentConfig.title }}
@@ -828,10 +830,10 @@ onUnmounted(() => {
               </button>
             </div>
 
-            <!-- Helper / Notice Text -->
+            <!-- Notice -->
             <p class="edit-modal-note">{{ currentConfig.note }}</p>
 
-            <!-- Regular Field Input Box with Clear (x) Button -->
+            <!-- Field input -->
             <div v-if="currentEditKey !== 'password'" class="modal-input-section">
               <div v-if="modalError" class="modal-error-banner">
                 {{ modalError }}
@@ -862,42 +864,98 @@ onUnmounted(() => {
               </div>
             </div>
 
-            <!-- Password Change Multi-Input Section -->
+            <!-- Password inputs -->
             <div v-else class="modal-password-section">
               <div v-if="passwordError" class="modal-error-banner">
                 {{ passwordError }}
               </div>
               <div class="modal-pw-field">
                 <label>Current Password</label>
-                <input
-                  v-model="passwordForm.currentPassword"
-                  type="password"
-                  class="edit-input"
-                  placeholder="Current password"
-                />
+                <div class="password-input-wrapper">
+                  <input
+                    v-model="passwordForm.currentPassword"
+                    :type="showPasswords.current ? 'text' : 'password'"
+                    class="edit-input"
+                    placeholder="Current password"
+                  />
+                  <button
+                    type="button"
+                    class="password-toggle-btn"
+                    tabindex="-1"
+                    :aria-label="showPasswords.current ? 'Hide password' : 'Show password'"
+                    @click="showPasswords.current = !showPasswords.current"
+                  >
+                    <svg v-if="!showPasswords.current" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                    <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                      <line x1="1" y1="1" x2="23" y2="23" />
+                    </svg>
+                  </button>
+                </div>
               </div>
+
               <div class="modal-pw-field">
                 <label>New Password</label>
-                <input
-                  v-model="passwordForm.newPassword"
-                  type="password"
-                  class="edit-input"
-                  placeholder="New password (min. 6 chars)"
-                />
+                <div class="password-input-wrapper">
+                  <input
+                    v-model="passwordForm.newPassword"
+                    :type="showPasswords.new ? 'text' : 'password'"
+                    class="edit-input"
+                    placeholder="New password (min. 6 chars)"
+                  />
+                  <button
+                    type="button"
+                    class="password-toggle-btn"
+                    tabindex="-1"
+                    :aria-label="showPasswords.new ? 'Hide password' : 'Show password'"
+                    @click="showPasswords.new = !showPasswords.new"
+                  >
+                    <svg v-if="!showPasswords.new" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                    <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                      <line x1="1" y1="1" x2="23" y2="23" />
+                    </svg>
+                  </button>
+                </div>
               </div>
+
               <div class="modal-pw-field">
                 <label>Confirm New Password</label>
-                <input
-                  v-model="passwordForm.confirmPassword"
-                  type="password"
-                  class="edit-input"
-                  placeholder="Confirm new password"
-                  @keydown.enter.prevent="requestSaveConfirmation"
-                />
+                <div class="password-input-wrapper">
+                  <input
+                    v-model="passwordForm.confirmPassword"
+                    :type="showPasswords.confirm ? 'text' : 'password'"
+                    class="edit-input"
+                    placeholder="Confirm new password"
+                    @keydown.enter.prevent="requestSaveConfirmation"
+                  />
+                  <button
+                    type="button"
+                    class="password-toggle-btn"
+                    tabindex="-1"
+                    :aria-label="showPasswords.confirm ? 'Hide password' : 'Show password'"
+                    @click="showPasswords.confirm = !showPasswords.confirm"
+                  >
+                    <svg v-if="!showPasswords.confirm" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                    <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                      <line x1="1" y1="1" x2="23" y2="23" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
 
-            <!-- Full-Width Save Button -->
+            <!-- Submit button -->
             <button
               type="button"
               class="edit-modal-save-btn"
@@ -907,7 +965,7 @@ onUnmounted(() => {
             </button>
           </template>
 
-          <!-- STEP 2: CONFIRMATION VIEW -->
+          <!-- Confirmation Dialog -->
           <template v-else>
             <div class="edit-modal-header">
               <h3 id="editModalTitle" class="edit-modal-title">
@@ -1066,7 +1124,7 @@ onUnmounted(() => {
   margin-bottom: 20px;
 }
 
-/* Big Header for Personal & Security (similar to former Account info size) */
+/* Subgroup heading */
 .group-heading {
   font-size: 22px;
   font-weight: 800;
@@ -1081,7 +1139,7 @@ onUnmounted(() => {
   margin: 28px 0 24px;
 }
 
-/* Horizontal Setting Row */
+/* Setting row */
 .roblox-setting-row {
   display: flex;
   align-items: center;
@@ -1134,7 +1192,7 @@ onUnmounted(() => {
   font-size: 15px;
 }
 
-/* Red [Verify] button directly beside unverified email */
+/* Verify button */
 .verify-btn-red {
   background: #dc2626;
   color: #ffffff;
@@ -1163,7 +1221,7 @@ onUnmounted(() => {
   box-shadow: none;
 }
 
-/* Verified Pill */
+/* Verified badge */
 .verified-pill {
   display: inline-flex;
   align-items: center;
@@ -1181,7 +1239,7 @@ onUnmounted(() => {
   color: #16a34a;
 }
 
-/* Edit pencil button at the far right of the row */
+/* Edit button */
 .row-edit-btn {
   background: none;
   border: none;
@@ -1201,7 +1259,7 @@ onUnmounted(() => {
   transform: scale(1.05);
 }
 
-/* Ghost Theme Toggle */
+/* Theme toggle */
 .ghost-theme-control {
   display: inline-flex;
   background: #f1f5f9;
@@ -1240,9 +1298,7 @@ onUnmounted(() => {
   font-style: italic;
 }
 
-/* ==========================================================================
-   CLEAN LIGHT THEME EDIT MODAL & CONFIRMATION
-   ========================================================================== */
+/* Edit Modal */
 .edit-modal-overlay {
   position: fixed;
   inset: 0;
@@ -1408,6 +1464,40 @@ onUnmounted(() => {
   font-weight: 600;
 }
 
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.password-input-wrapper .edit-input {
+  width: 100%;
+  padding-right: 42px !important;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #94a3b8;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.password-toggle-btn:hover {
+  color: var(--blue);
+  background: #f1f5f9;
+}
+
 .modal-error-banner {
   background: #fef2f2;
   border: 1px solid #fecaca;
@@ -1418,9 +1508,7 @@ onUnmounted(() => {
   margin-bottom: 4px;
 }
 
-/* ==========================================================================
-   "ARE YOU SURE?" CONFIRMATION STYLES
-   ========================================================================== */
+/* Confirmation Dialog */
 .confirm-content-box {
   display: flex;
   flex-direction: column;
