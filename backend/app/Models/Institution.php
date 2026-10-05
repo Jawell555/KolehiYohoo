@@ -34,4 +34,8 @@ class Institution extends Model
     {
         return $this->belongsTo(User::class, 'user_id');
     }
+
+    public function university(){
+        return $this->hasOne(University::class, 'institution_id', 'institution_id');
+    }
 }

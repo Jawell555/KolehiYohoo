@@ -274,7 +274,7 @@ export function useAuth() {
           email: officialEmail,
           phone: contactPhone,
           notes: notes || '',
-          password: password || 'KolehiYohoo!2026',
+          password: password || undefined,
         }),
       })
 

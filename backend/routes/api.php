@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CourseController;
+use App\Http\Controllers\InstitutionPortalController;
 use App\Http\Controllers\SavedUniversityController;
 use App\Http\Controllers\UniversityController;
 use Illuminate\Support\Facades\Route;
@@ -32,4 +34,22 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/saved-universities', [SavedUniversityController::class, 'index']);
     Route::post('/saved-universities/{id}', [SavedUniversityController::class, 'store'])->whereNumber('id');
     Route::delete('/saved-universities/{id}', [SavedUniversityController::class, 'destroy'])->whereNumber('id');
+
+    //Admin Routes
+    Route::middleware('role:admin')->prefix('admin')->group(function(){
+        Route::get('/pending-institutions', [AdminController::class,'pendingInstitutions']);
+        Route::patch('/institutions/{id}/approve', [AdminController::class,'approveInstitution'])->whereNumber('id');
+        Route::delete('/institutions/{id}/reject',[AdminController::class,'rejectInstitution'])->whereNumber('id');
+
+    });
+
+    //Institution Portal Routes
+    Route::middleware('role:institution')->prefix('institution')->group(function(){
+        Route::get('/my-school', [InstitutionPortalController::class,'mySchool']);
+        Route::put('/my-school', [InstitutionPortalController::class,'updateSchool']);
+        Route::post('/my-school/courses',[InstitutionPortalController::class,'addCourse']);
+        Route::delete('/my-school/courses/{courseId}',[InstitutionPortalController::class,'removeCourse'])->whereNumber('courseId');
+    });
+
 });
+
