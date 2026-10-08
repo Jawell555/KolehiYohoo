@@ -185,7 +185,7 @@ export function useAdmin() {
       }
 
       adminSuccess.value = data.message || 'University updated successfully'
-      
+
       // Update local item
       const idx = schools.value.findIndex((s) => s.id === universityId)
       if (idx !== -1 && data.data) {

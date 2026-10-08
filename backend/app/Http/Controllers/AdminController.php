@@ -6,8 +6,13 @@ use App\Models\Course;
 use App\Models\Institution;
 use App\Models\University;
 use Illuminate\Http\Request;
+use App\Mail\ApproveMail;
+use App\Mail\RejectMail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class AdminController extends Controller
 {
@@ -49,14 +54,19 @@ class AdminController extends Controller
             return response()->json(['message' => 'Institution already approved.'], 400);
         }
 
-        DB::transaction(function () use ($institution, $request) {
+        // Use the admin-provided temp password, otherwise generate one
+        $tempPassword = $request->filled('temp_password')
+            ? $request->temp_password
+            : Str::random(12);
+
+        DB::transaction(function () use ($institution, $tempPassword) {
             // 1. Mark institution as approved
             $institution->is_approved = true;
             $institution->save();
 
-            // 1b. Update password if admin set a temporary password
-            if ($request->filled('temp_password') && $institution->user) {
-                $institution->user->hash_password = Hash::make($request->temp_password);
+            // 1b. Set the temporary password on the user account
+            if ($institution->user) {
+                $institution->user->hash_password = Hash::make($tempPassword);
                 $institution->user->save();
             }
 
@@ -80,21 +90,59 @@ class AdminController extends Controller
             }
         });
 
+        // 3. Email the credentials
+        $emailSent = false;
+        if ($institution->user?->email) {
+            try {
+                Mail::to($institution->user->email)->send(new ApproveMail(
+                    trim($institution->first_name . ' ' . $institution->last_name?:'Institutional Representative'),
+                    $institution->institution_name,
+                    $institution->user->email,
+                    $tempPassword,
+                ));
+                $emailSent = true;
+            } catch (\Throwable $e) {
+                Log::error('Failed to send approval email: ' . $e->getMessage());
+            }
+        }
+
         return response()->json([
-            'message' => "Institution '{$institution->institution_name}' has been approved successfully.",
+            'message' => "Institution '{$institution->institution_name}' has been approved successfully."
+                . ($emailSent ? ' Credentials were emailed.' : ' However, the credentials email could not be sent.'),
+            'email_sent' => $emailSent,
         ]);
     }
 
     /**
      * Reject and delete a pending application.
      */
-    public function rejectInstitution(int $id)
+    public function rejectInstitution(Request $request, int $id)
     {
         $institution = Institution::with('user')->find($id);
         if (!$institution) {
             return response()->json(['message' => 'Institution not found.'], 404);
         }
 
+        $userEmail = $institution->user?->email;
+        $repName = trim(($institution->first_name ?? '') . ' ' . ($institution->last_name ?? '')) ?: 'Institutional Representative';
+        $schoolName = $institution->institution_name;
+        $reason = $request->input('reason', 'Incomplete verification details, unconfirmed institutional affiliation, or duplicate records.');
+
+
+
+        $emailSent = false;
+        if ($userEmail) {
+            try {
+                Mail::to($userEmail)->send(new RejectMail(
+                    $repName,
+                    $schoolName,
+                    $reason,
+                ));
+                $emailSent = true;
+            } catch (\Throwable $e) {
+                Log::error('Failed to send rejection email: ' . $e->getMessage());
+            }
+        }
         DB::transaction(function () use ($institution) {
             $user = $institution->user;
             $institution->delete();
@@ -103,7 +151,11 @@ class AdminController extends Controller
             }
         });
 
-        return response()->json(['message' => 'Institution application rejected and removed.']);
+        return response()->json([
+            'message' => "Institution '{$schoolName}' has been rejected."
+                . ($emailSent ? ' Rejection email was sent.' : ' However, the rejection email could not be sent.'),
+            'email_sent' => $emailSent,
+        ]);
     }
 
     /**

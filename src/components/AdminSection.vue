@@ -151,75 +151,26 @@ function closeReviewModal() {
   activeRequest.value = null
 }
 
-// Generate random 8-character password
-function generate8CharPassword() {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-  let pass = ''
-  for (let i = 0; i < 8; i++) {
-    pass += chars.charAt(Math.floor(Math.random() * chars.length))
+
+async function handleApprove(req) {
+  if (!req?.institution_id) return
+  const result = await approveRequest(req.institution_id)
+  if(result.success) {
+    showToast(`Approved ${req.institution_name}`, 'Success')
+  } else {
+    showToast(result.message || 'Failed to approve request', 'Error')
   }
-  return pass
-}
-
-// Approval email template
-function getApprovalEmailTemplate(req, customPassword = null) {
-  const repName = `${req?.first_name || ''} ${req?.last_name || ''}`.trim() || 'Institutional Representative'
-  const schoolName = req?.institution_name || 'Your Institution'
-  const email = req?.user?.email || 'Registered Institutional Email'
-  const password = customPassword || generate8CharPassword()
-
-  return `Subject: KolehiYohoo! - Institutional Verification Application Status
-
-Dear ${repName},
-
-We are pleased to inform you that your institutional verification request for ${schoolName} has been officially approved by our team.
-
-Your institutional administrator account has been created. You can now log in to the KolehiYohoo Institution Portal to manage and update your academic programs and campus profile:
-
-Portal URL: kolehiyohoo.app
-Email: ${email}
-Temporary Password: ${password}
-
-For security purposes, please log in at your earliest convenience and update your password.
-
-If you have any questions or require assistance managing your account, please feel free to contact us.
-
-Best regards,
-KolehiYohoo Admin Team`
-}
-
-// Rejection email template
-function getRejectionEmailTemplate(req) {
-  const repName = `${req?.first_name || ''} ${req?.last_name || ''}`.trim() || 'Institutional Representative'
-  const schoolName = req?.institution_name || 'Your Institution'
-
-  return `Subject: KolehiYohoo! - Institutional Verification Application Status
-
-Dear ${repName},
-
-Thank you for your interest in registering ${schoolName} on KolehiYohoo!.
-
-Following a review by our team, we regret to inform you that we are unable to approve your institutional verification request at this time. This may be due to incomplete verification details, unconfirmed institutional affiliation, or duplicate records.
-
-If you believe this decision was reached in error or would like to submit updated information regarding your institution, you are welcome to submit a new verification request or contact our team.
-
-We appreciate your time and interest in partnering with us!.
-
-Best regards,
-KolehiYohoo Team`
-}
-
-function handleApprove(req) {
-  void req
-  void getApprovalEmailTemplate
-  void approveRequest
   closeReviewModal()
 }
 
-function handleReject(req) {
-  void req
-  void getRejectionEmailTemplate
-  void rejectRequest
+async function handleReject(req) {
+  if (!req?.institution_id) return
+  const result = await rejectRequest(req.institution_id)
+  if (result.success) {
+    showToast(`Rejected ${req.institution_name}`, 'Success')
+  } else {
+    showToast(result.message || 'Failed to reject request', 'Error')
+  }
   closeReviewModal()
 }
 
