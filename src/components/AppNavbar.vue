@@ -6,7 +6,7 @@ import { useAdmin } from '../composables/useAdmin'
 import ProfileModal from './ProfileModal.vue'
 import emptyAvatar from '../assets/empty.png'
 
-const { currentUser, logout, openAuthModal } = useAuth()
+const { currentUser, isPendingInstitution, logout, openAuthModal } = useAuth()
 const { activeSection, showSection } = useNavigation()
 const { adminTab, stats, setAdminTab } = useAdmin()
 
@@ -19,6 +19,8 @@ function handleBrandClick() {
   if (currentUser.value?.role === 'admin') {
     setAdminTab('dashboard')
     showSection('adminSection')
+  } else if (isPendingInstitution.value) {
+    showSection('applicationStatusSection')
   } else {
     showSection('homeSection')
   }
@@ -66,7 +68,8 @@ function confirmLogout() {
   if (
     activeSection.value === 'savedSection' ||
     activeSection.value === 'settingsSection' ||
-    activeSection.value === 'adminSection'
+    activeSection.value === 'adminSection' ||
+    activeSection.value === 'applicationStatusSection'
   ) {
     showSection('homeSection')
   }
@@ -121,8 +124,19 @@ onUnmounted(() => {
         KolehiYohoo!
       </div>
 
+      <!-- For Pending Institution so they only see their Application Status-->
+      <nav v-if="isPendingInstitution" class="nav-links">
+        <a
+        href="#"
+        :class="{ active: activeSection === 'applicationStatusSection'}"
+        @click.prevent="showSection('applicationStatusSection')"
+      >
+        Application Status
+      </a>
+      </nav>
+
       <!-- Admin Navigation -->
-      <nav v-if="currentUser?.role === 'admin'" class="nav-links">
+      <nav v-else-if="currentUser?.role === 'admin'" class="nav-links">
         <a
           href="#"
           :class="{ active: activeSection === 'adminSection' && adminTab === 'dashboard' }"
@@ -150,7 +164,7 @@ onUnmounted(() => {
       </nav>
 
       <!-- Student / Public Navigation -->
-      <nav v-else-if="activeSection !== 'adminSection'" class="nav-links">
+      <nav v-else class="nav-links">
         <a
           href="#"
           :class="{ active: activeSection === 'homeSection' }"
@@ -214,7 +228,7 @@ onUnmounted(() => {
           <!-- Floating Dropdown Choices: Profile, Settings, Sign Out -->
           <div v-if="isUserDropdownOpen" class="nav-user-dropdown">
             <button
-              v-if="currentUser?.role !== 'admin'"
+              v-if="currentUser?.role !== 'admin' && !isPendingInstitution"
               type="button"
               class="dropdown-item"
               @click="handleProfileClick"

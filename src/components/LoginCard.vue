@@ -1,6 +1,7 @@
 <script setup>
 import { reactive } from 'vue'
 import { useAuth } from '../composables/useAuth'
+import { useNavigation } from '../composables/useNavigation'
 
 const {
   isRoleChosen,
@@ -20,7 +21,10 @@ const {
   handleGoogleAuth,
   handleForgotPassword,
   closeAuthModal,
+  isPendingInstitution,
 } = useAuth()
+
+const { showSection } = useNavigation()
 
 const loginForm = reactive({
   email: '',
@@ -42,6 +46,8 @@ const institutionForm = reactive({
   email: '',
   phone: '',
   notes: '',
+  password: '',
+  confirmPassword: '',
 })
 
 const showPassword = reactive({
@@ -49,6 +55,8 @@ const showPassword = reactive({
   studentSignup: false,
   studentSignupConfirm: false,
   instLogin: false,
+  instSignup: false,
+  instSignupConfirm: false,
 })
 
 function resetForms() {
@@ -117,10 +125,18 @@ async function onInstitutionLogin() {
   if (success) {
     resetForms()
     closeAuthModal()
+    if (isPendingInstitution.value) {
+      showSection('applicationStatusSection')
+    }
   }
 }
 
 async function onInstitutionVerification() {
+  if (institutionForm.password !== institutionForm.confirmPassword) {
+    authError.value = 'Password do not match!'
+    return
+  }
+
   const success = await submitInstitutionVerification({
     schoolName: institutionForm.schoolName,
     firstName: institutionForm.firstName,
@@ -129,6 +145,7 @@ async function onInstitutionVerification() {
     email: institutionForm.email,
     phone: institutionForm.phone,
     notes: institutionForm.notes,
+    password: institutionForm.password,
   })
   if (success) {
     resetForms()
@@ -589,15 +606,80 @@ function onForgotPassword() {
           />
         </div>
 
+        <!-- Address na muna 'to  -->
         <div class="form-group">
-          <label for="instNotes">Campus / Inquiry Notes <span>(Optional)</span></label>
+          <label for="instNotes">Address <span></span></label>
           <input
             id="instNotes"
             v-model="institutionForm.notes"
             type="text"
-            placeholder="Main Campus"
+            required
+            placeholder="123 Matandang Balara, Diliman, Quezon City"
           />
         </div>
+
+        <div class="form-group">
+          <label for="instPassword">Password</label>
+          <div class="password-input-wrapper">
+            <input
+              id="instPassword"
+              v-model="institutionForm.password"
+              :type="showPassword.instSignup ? 'text' : 'password'"
+              placeholder="At least 8 characters"
+              required
+              minlength="8"
+              maxlength="64"
+              autocomplete="new-password"/>
+          <button
+            type="button"
+            class="password-toggle-btn"
+            tabindex="-1"
+            @click="showPassword.instSignup = !showPassword.instSignup"
+            >
+              <svg v-if="!showPassword.instSignup" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+              <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                <line x1="1" y1="1" x2="23" y2="23" />
+              </svg>
+          </button>
+        </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="instConfirmPassword">Confirm Password</label>
+          <div class="password-input-wrapper">
+            <input
+              id="instConfirmPassword"
+              v-model="institutionForm.confirmPassword"
+              :type="showPassword.instSignupConfirm ? 'text' : 'password'"
+              placeholder="Re-enter your password"
+              required
+              minlength="8"
+              maxlength="64"
+              autocomplete="new-password"
+            />      
+            
+          <button
+            type="button"
+            class="password-toggle-btn"
+            tabindex="-1"
+            @click="showPassword.instSignupConfirm = !showPassword.instSignupConfirm"
+          >
+            <svg v-if="!showPassword.instSignupConfirm" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+              <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                <line x1="1" y1="1" x2="23" y2="23" />
+              </svg>
+          </button>   
+        </div>
+        </div> 
+
 
         <button type="submit" class="primary-btn auth-submit-btn" :disabled="isSubmitting">
           <span v-if="isSubmitting" class="btn-spinner"></span>

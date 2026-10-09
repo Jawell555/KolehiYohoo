@@ -82,7 +82,7 @@ class AuthController extends Controller
     {
         $validated = $request->validate([
             'email' => 'required|string|email|max:255|unique:users,email',
-            'password' => 'nullable|string|min:6',
+            'password' => 'required|string|min:8',
             'school_name' => 'nullable|string|max:255',
             'institution_name' => 'nullable|string|max:255',
             'rep_name' => 'nullable|string|max:255',
@@ -202,11 +202,11 @@ class AuthController extends Controller
         $roleName = $user->role_name;
 
         // Check if pending institution approval
-        if ($roleName === 'institution' && $user->institution && !$user->institution->is_approved) {
-            return response()->json([
-                'message' => 'Your institution account is pending verification and approval by administrators.',
-            ], 403);
-        }
+        // if ($roleName === 'institution' && $user->institution && !$user->institution->is_approved) {
+        //     return response()->json([
+        //         'message' => 'Your institution account is pending verification and approval by administrators.',
+        //     ], 403);
+        // }
 
         // Enforce role matching if a specific role or role_id was requested
         if (!empty($validated['role'])) {

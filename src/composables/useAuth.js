@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, computed} from 'vue'
 
 function getStoredUser() {
   if (typeof localStorage === 'undefined') return null
@@ -12,6 +12,15 @@ function getStoredUser() {
 const savedUser = getStoredUser()
 const currentUser = ref(savedUser)
 const currentRole = ref(savedUser?.role || 'student')
+const isPendingInstitution = computed(() => {
+  return(
+    currentUser.value &&
+    (currentUser.value.role === 'institution' || currentUser.value.role_id === 2) &&
+    currentUser.value.institution &&
+    !currentUser.value.institution.is_approved
+  )
+})
+
 const currentAuthMode = ref('login') // 'login' or 'signup'
 const isRoleChosen = ref(false)
 const isAuthModalOpen = ref(false)
@@ -557,6 +566,7 @@ export function useAuth() {
   return {
     currentUser,
     currentRole,
+    isPendingInstitution,
     currentAuthMode,
     isRoleChosen,
     isAuthModalOpen,

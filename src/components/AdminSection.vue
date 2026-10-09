@@ -140,6 +140,8 @@ async function handleSaveSchool() {
 // Requests management
 const isReviewModalOpen = ref(false)
 const activeRequest = ref(null)
+const isApproving = ref(false)
+const isDeclining = ref(false)
 
 function openReviewModal(req) {
   activeRequest.value = req
@@ -153,25 +155,35 @@ function closeReviewModal() {
 
 
 async function handleApprove(req) {
-  if (!req?.institution_id) return
+  if (!req?.institution_id || isApproving.value || isDeclining.value) return
+  isApproving.value = true
+  try {
   const result = await approveRequest(req.institution_id)
   if(result.success) {
     showToast(`Approved ${req.institution_name}`, 'Success')
+    closeReviewModal()
   } else {
     showToast(result.message || 'Failed to approve request', 'Error')
   }
-  closeReviewModal()
+  } finally {
+    isApproving.value = false
+  }
 }
 
 async function handleReject(req) {
-  if (!req?.institution_id) return
+  if (!req?.institution_id || isApproving.value || isDeclining.value) return
+  isDeclining.value = true
+  try {
   const result = await rejectRequest(req.institution_id)
   if (result.success) {
     showToast(`Rejected ${req.institution_name}`, 'Success')
+    closeReviewModal()
   } else {
     showToast(result.message || 'Failed to reject request', 'Error')
   }
-  closeReviewModal()
+} finally {
+  isDeclining.value = false
+}
 }
 
 // Data loading
@@ -686,7 +698,7 @@ watch(
             </div>
 
             <div v-if="activeRequest.address" class="review-row">
-              <span class="detail-label">Campus / Notes</span>
+              <span class="detail-label">Address</span>
               <span class="detail-value">{{ activeRequest.address }}</span>
             </div>
           </div>
@@ -695,17 +707,21 @@ watch(
             <button
               type="button"
               class="btn-decline"
+              :disabled="isDeclining || isApproving"
               @click="handleReject(activeRequest)"
             >
-              Decline Application
+              <span v-if="isDeclining" class="btn-spinner"></span>
+              <span>{{ isDeclining ? 'Declining...' : 'Decline Application'}}</span>
             </button>
 
             <button
               type="button"
               class="btn-approve"
+              :disabled="isDeclining || isApproving"
               @click="handleApprove(activeRequest)"
             >
-              Approve Institution
+              <span v-if="isApproving" class="btn-spinner"></span>
+              <span>{{ isApproving ? 'Approving...': 'Approve Institution'}}</span>
             </button>
           </div>
         </div>
@@ -1449,7 +1465,21 @@ watch(
   padding: 9px 18px;
   border-radius: 8px;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   transition: all 0.15s ease;
+}
+
+.btn-decline .btn-spinner {
+  border-color: rgba(185, 28, 28, 0.3);
+  border-top-color: #b91c1c;
+}
+
+.btn-decline:disabled,
+.btn-approve:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .btn-decline:hover {

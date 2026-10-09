@@ -8,6 +8,7 @@ import SavedSchoolsSection from './components/SavedSchoolsSection.vue'
 import SchoolDetailsSection from './components/SchoolDetailsSection.vue'
 import SettingsSection from './components/SettingsSection.vue'
 import AdminSection from './components/AdminSection.vue'
+import ApplicationStatusSection from './components/ApplicationStatusSection.vue'
 import AuthModal from './components/AuthModal.vue'
 import ToastNotification from './components/ToastNotification.vue'
 
@@ -26,6 +27,7 @@ const { isAuthModalOpen } = useAuth()
         <SchoolDetailsSection v-show="activeSection === 'schoolDetailsSection'" />
         <SettingsSection v-show="activeSection === 'settingsSection'" />
         <AdminSection v-show="activeSection === 'adminSection'" />
+        <ApplicationStatusSection v-show="activeSection === 'applicationStatusSection'" />
       </main>
     </div>
 

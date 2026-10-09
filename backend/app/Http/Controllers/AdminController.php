@@ -55,9 +55,9 @@ class AdminController extends Controller
         }
 
         // Use the admin-provided temp password, otherwise generate one
-        $tempPassword = $request->filled('temp_password')
-            ? $request->temp_password
-            : Str::random(12);
+        // $tempPassword = $request->filled('temp_password')
+        //     ? $request->temp_password
+        //     : Str::random(12);
 
         DB::transaction(function () use ($institution, $tempPassword) {
             // 1. Mark institution as approved
@@ -65,10 +65,10 @@ class AdminController extends Controller
             $institution->save();
 
             // 1b. Set the temporary password on the user account
-            if ($institution->user) {
-                $institution->user->hash_password = Hash::make($tempPassword);
-                $institution->user->save();
-            }
+            // if ($institution->user) {
+            //     $institution->user->hash_password = Hash::make($tempPassword);
+            //     $institution->user->save();
+            // }
 
             // 2. Check if university with a matching name already exists to claim it
             $university = University::where('name', 'ILIKE', $institution->institution_name)->first();
@@ -98,7 +98,7 @@ class AdminController extends Controller
                     trim($institution->first_name . ' ' . $institution->last_name?:'Institutional Representative'),
                     $institution->institution_name,
                     $institution->user->email,
-                    $tempPassword,
+                    $institution->user->hash_password,
                 ));
                 $emailSent = true;
             } catch (\Throwable $e) {

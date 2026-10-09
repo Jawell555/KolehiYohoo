@@ -16,10 +16,9 @@
         <div style="background-color: #f8fafc; border-left: 4px solid #3b82f6; padding: 14px 18px; margin: 0 0 16px 0; border-radius: 4px;">
             <p style="margin: 0 0 8px 0;"><strong>Portal URL:</strong> <a href="https://kolehiyohoo.app" style="color: #2563eb; text-decoration: underline;">kolehiyohoo.app</a></p>
             <p style="margin: 0 0 8px 0;"><strong>Email:</strong> {{ $email }}</p>
-            <p style="margin: 0;"><strong>Temporary Password:</strong> <code style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px;">{{ $temp_password }}</code></p>
         </div>
 
-        <p style="margin: 0 0 16px 0;">For security purposes, please log in at your earliest convenience and update your password.</p>
+        <p style="margin: 0 0 16px 0;">You may now access various institutional features with the credentials you provided during registration.</p>
 
         <p style="margin: 0 0 24px 0;">If you have any questions or require assistance managing your account, please feel free to contact us.</p>
 

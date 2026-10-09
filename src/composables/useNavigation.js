@@ -8,6 +8,7 @@ const sectionHashMap = {
   schoolDetailsSection: '#details',
   settingsSection: '#settings',
   adminSection: '#admin',
+  applicationStatusSection: '#application-status',
 }
 
 const hashSectionMap = {
@@ -18,11 +19,18 @@ const hashSectionMap = {
   routes: 'schoolDetailsSection',
   settings: 'settingsSection',
   admin: 'adminSection',
+  'application-status': 'applicationStatusSection',
+  status: 'applicationStatusSection',
 }
 
 function getInitialSection() {
+  const { isPendingInstitution } =useAuth()
   if (typeof window !== 'undefined') {
     const rawHash = window.location.hash.replace('#', '')
+    if (isPendingInstitution.value) {
+      if (rawHash === 'settings') return 'settingsSection'
+      return 'applicationStatusSection'
+    }
     if (rawHash === 'login' || rawHash === 'signup' || rawHash === 'register') {
       return 'homeSection'
     }
@@ -30,6 +38,8 @@ function getInitialSection() {
       return hashSectionMap[rawHash]
     }
   }
+  const { isPendingInstitution: isPending } =useAuth()
+  if (isPending.value) return 'applicationStatusSection'
   return 'homeSection'
 }
 
@@ -51,17 +61,27 @@ if (typeof window !== 'undefined') {
 
   // Listen for browser back / forward
   window.addEventListener('popstate', (event) => {
+    const { isPendingInstitution } =useAuth()
+    let target = 'homeSection'
     if (event.state && event.state.section) {
-      activeSection.value = event.state.section
+      target = event.state.section
     } else {
       const hash = window.location.hash.replace('#', '')
-      activeSection.value = hashSectionMap[hash] || 'homeSection'
+      target = hashSectionMap[hash] || 'homeSection'
     }
+    if (isPendingInstitution.value && target !== 'settingsSection') {
+      target = 'applicationStatusSection'
+    }
+    activeSection.value = target
   })
 }
 
 export function useNavigation() {
   function showSection(sectionId, { pushHistory = true } = {}) {
+    const { isPendingInstitution } = useAuth()
+    if (isPendingInstitution.value && sectionId !== 'settingsSection') {
+      sectionId = 'applicationStatusSection'
+    }
     if (activeSection.value === sectionId) return
     activeSection.value = sectionId
     if (typeof window !== 'undefined') {
