@@ -18,6 +18,9 @@ const searchCourse = ref('')
 const selectedCourse = ref(null)
 const searchLocation = ref('')
 const searchType = ref('') // '' = both, 'public', 'private'
+const myCoords = ref(null) // { lat, lng } when the student pressed "Use my location"
+const isLocating = ref(false)
+const sortedByDistance = ref(false)
 const hasSearched = ref(false)
 const searchMessage = ref('')
 const isCourseDropdownOpen = ref(false)
@@ -222,6 +225,7 @@ export function useSchools() {
     searchCourse.value = ''
     selectedCourse.value = null
     searchLocation.value = ''
+    myCoords.value = null
     searchType.value = ''
     isCourseDropdownOpen.value = false
     return runSearch()
@@ -229,6 +233,39 @@ export function useSchools() {
 
   function searchSchools() {
     return runSearch()
+  }
+
+  // Student typed their own location, so forget any GPS position.
+  function onLocationInput() {
+    myCoords.value = null
+  }
+
+  // "Use my current location" button: ask the browser for GPS / Wi-Fi position, then search.
+  function useMyLocation() {
+    if (!('geolocation' in navigator)) {
+      showToast('Your browser does not support location access. Please type your location instead.', 'Location Unavailable')
+      return
+    }
+    isLocating.value = true
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        myCoords.value = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+        searchLocation.value = 'My current location'
+        isLocating.value = false
+        runSearch()
+      },
+      (err) => {
+        isLocating.value = false
+        const denied = err.code === err.PERMISSION_DENIED
+        showToast(
+          denied
+            ? 'Location permission was blocked. Allow it in your browser, or type your location instead.'
+            : 'Could not get your location. Please type it instead.',
+          'Location Unavailable',
+        )
+      },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 },
+    )
   }
 
   // Fetch schools based on active filters
@@ -244,7 +281,13 @@ export function useSchools() {
     } else if (course) {
       params.set('course', course)
     }
-    if (loc) params.set('location', loc)
+    if (myCoords.value) {
+      // GPS position wins over typed text
+      params.set('lat', myCoords.value.lat)
+      params.set('lng', myCoords.value.lng)
+    } else if (loc) {
+      params.set('location', loc)
+    }
     if (type) params.set('type', type)
 
     const isFiltered = !!(course || loc || type)
@@ -255,10 +298,14 @@ export function useSchools() {
 
     try {
       const query = params.toString()
-      const { data } = await apiGet(`/universities${query ? `?${query}` : ''}`)
+      const { data, meta } = await apiGet(`/universities${query ? `?${query}` : ''}`)
       if (requestId !== searchRequestId) return // a newer search superseded this one
 
-      matchedSchools.value = [...(data || [])].sort((a, b) => a.name.localeCompare(b.name))
+      // When the server sorted by distance, keep its order (nearest first); otherwise A-Z.
+      sortedByDistance.value = !!meta?.sorted_by_distance
+      matchedSchools.value = sortedByDistance.value
+        ? [...(data || [])]
+        : [...(data || [])].sort((a, b) => a.name.localeCompare(b.name))
       currentPage.value = 1
       appliedCourseTag.value = usesSelectedCourse
         ? selectedCourse.value.code || selectedCourse.value.name
@@ -271,8 +318,14 @@ export function useSchools() {
         const labels = []
         if (course) labels.push(`Course: ${course}`)
         if (type) labels.push(`School type: ${type === 'public' ? 'Public' : 'Private'}`)
-        if (loc) labels.push(`location: ${loc}`)
-        searchMessage.value = `${count} school${count === 1 ? '' : 's'} found for ${labels.join(', ')}.`
+        if (sortedByDistance.value) {
+          const from = myCoords.value ? 'your current location' : loc
+          const base = `${count} school${count === 1 ? '' : 's'} found, nearest to ${from} first`
+          searchMessage.value = labels.length ? `${base} (${labels.join(', ')}).` : `${base}.`
+        } else {
+          if (loc) labels.push(`location: ${loc}`)
+          searchMessage.value = `${count} school${count === 1 ? '' : 's'} found for ${labels.join(', ')}.`
+        }
       }
     } catch (error) {
       if (requestId !== searchRequestId) return
@@ -390,6 +443,8 @@ export function useSchools() {
     selectedCourse,
     searchLocation,
     searchType,
+    isLocating,
+    sortedByDistance,
     hasSearched,
     searchMessage,
     isCourseDropdownOpen,
@@ -414,6 +469,8 @@ export function useSchools() {
     closeCourseDropdown,
     resetSearch,
     searchSchools,
+    onLocationInput,
+    useMyLocation,
     isSchoolSaved,
     toggleSave,
     viewSchool,

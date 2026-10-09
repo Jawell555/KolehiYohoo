@@ -21,7 +21,26 @@ class University extends Model
         'address',
         'website',
         'graduate_programs',
+        'latitude',
+        'longitude',
     ];
+
+    protected $casts = [
+        'latitude' => 'float',
+        'longitude' => 'float',
+    ];
+
+    protected static function booted(): void
+    {
+        // If a school's address changes, forget the old coordinates so
+        // `php artisan universities:geocode` picks it up again.
+        static::saving(function (University $u) {
+            if ($u->exists && $u->isDirty('address') && !$u->isDirty(['latitude', 'longitude'])) {
+                $u->latitude = null;
+                $u->longitude = null;
+            }
+        });
+    }
 
     /**
      * Courses offered by this university (via the course_offerings pivot table).
@@ -52,6 +71,10 @@ class University extends Model
             'institution_type' => $this->institution_type,
             'address' => $this->address,
             'website' => $this->website,
+            'latitude' => $this->latitude,
+            'longitude' => $this->longitude,
+            // Only present when the search was sorted by distance
+            'distance_km' => ($d = $this->getAttribute('distance_km')) !== null ? round((float) $d, 1) : null,
             'graduate_programs' => $this->graduate_programs,
             'courses_count' => $this->courses_count ?? ($this->relationLoaded('courses') ? $courses->count() : 0),
             'courses' => $courses->map(fn (Course $c) => $c->toApiArray())->all(),

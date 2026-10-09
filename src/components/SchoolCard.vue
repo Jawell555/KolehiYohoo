@@ -28,6 +28,9 @@ defineEmits(['view', 'toggle-save'])
       <span class="school-tag">{{ tag }}</span>
       <h3>{{ school.name }}</h3>
       <p>{{ school.address || 'Address not yet available' }}</p>
+      <p v-if="school.distance_km != null" class="school-distance">
+        📍 {{ school.distance_km }} km away
+      </p>
       <p>
         <template v-if="school.institution_type">{{ school.institution_type }} · </template>
         {{ school.courses_count ?? school.courses?.length ?? 0 }} program{{ (school.courses_count ?? school.courses?.length ?? 0) === 1 ? '' : 's' }} offered
@@ -49,6 +52,11 @@ defineEmits(['view', 'toggle-save'])
 </template>
 
 <style scoped>
+.school-distance {
+  font-weight: 700;
+  color: var(--blue);
+}
+
 .school-tag {
   max-width: 100%;
   overflow: hidden;

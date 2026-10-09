@@ -20,6 +20,7 @@ const {
   selectedCourse,
   searchLocation,
   searchType,
+  isLocating,
   hasSearched,
   searchMessage,
   isCourseDropdownOpen,
@@ -38,6 +39,8 @@ const {
   onCourseInput,
   closeCourseDropdown,
   searchSchools,
+  onLocationInput,
+  useMyLocation,
   isSchoolSaved,
   toggleSave,
   viewSchool,
@@ -177,14 +180,23 @@ onUnmounted(() => {
       </div>
 
       <div class="form-group">
-        <label for="locationInput">Starting Location <span>(Optional)</span></label>
+        <label for="locationInput">Starting Location <span>(Optional — shows nearest schools first)</span></label>
         <input
           id="locationInput"
           v-model="searchLocation"
-          placeholder="Enter barangay or location"
+          placeholder="Enter your barangay, city or address"
           autocomplete="off"
+          @input="onLocationInput"
           @keyup.enter="searchSchools"
         />
+        <button
+          type="button"
+          class="locate-btn"
+          :disabled="isLocating || isSearchingSchools"
+          @click="useMyLocation"
+        >
+          {{ isLocating ? 'Locating…' : '📍 Use my current location' }}
+        </button>
       </div>
 
       <button
@@ -277,6 +289,28 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+.locate-btn {
+  margin-top: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--blue);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.locate-btn:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.locate-btn:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
 .search-btn {
   padding: 0;
   display: inline-flex;

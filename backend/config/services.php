@@ -35,4 +35,15 @@ return [
         ],
     ],
 
+    /*
+    | Geocoding (address -> coordinates) used by the "nearest schools" search.
+    | Default provider is the free OpenStreetMap Nominatim API. No key is required,
+    | but its policy requires a User-Agent that identifies your app + a contact.
+    */
+    'geocoding' => [
+        'url' => env('GEOCODING_URL', 'https://nominatim.openstreetmap.org'),
+        'user_agent' => env('GEOCODING_USER_AGENT', 'KolehiYohoo/1.0 (set GEOCODING_USER_AGENT in .env)'),
+        'country' => env('GEOCODING_COUNTRY', 'ph'), // limit results to this country (ISO code)
+    ],
+
 ];

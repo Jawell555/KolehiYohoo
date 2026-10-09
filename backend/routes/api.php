@@ -18,7 +18,8 @@ Route::middleware('throttle:10,1')->group(function () {
 });
 
 // Public School Directory Routes
-Route::get('/universities', [UniversityController::class, 'index']);
+// (throttled because a typed starting location calls the geocoding API)
+Route::get('/universities', [UniversityController::class, 'index'])->middleware('throttle:60,1');
 Route::get('/universities/{id}', [UniversityController::class, 'show'])->whereNumber('id');
 Route::get('/courses', [CourseController::class, 'index']);
 
