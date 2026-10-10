@@ -17,19 +17,21 @@ function selectGhostTheme(theme) {
 
 // User Computed Data
 const displayFirstName = computed(() => {
-  return (
-    currentUser.value?.student?.first_name ||
-    (currentUser.value?.name ? currentUser.value.name.split(' ')[0] : '') ||
-    ''
-  ).trim()
+  if (currentUser.value?.student?.first_name) {
+    return currentUser.value.student.first_name.trim()
+  }
+  const name = currentUser.value?.admin?.name || currentUser.value?.name
+  if (!name || name.includes('@')) return ''
+  return name.split(' ')[0].trim()
 })
 
 const displayLastName = computed(() => {
-  return (
-    currentUser.value?.student?.last_name ||
-    (currentUser.value?.name ? currentUser.value.name.split(' ').slice(1).join(' ') : '') ||
-    ''
-  ).trim()
+  if (currentUser.value?.student?.last_name) {
+    return currentUser.value.student.last_name.trim()
+  }
+  const name = currentUser.value?.admin?.name || currentUser.value?.name
+  if (!name || name.includes('@')) return ''
+  return name.split(' ').slice(1).join(' ').trim()
 })
 
 const displayAddress = computed(() => {
@@ -293,11 +295,13 @@ async function executeSave() {
     let res = { success: true }
     if (key === 'firstName') {
       res = await updateUserProfile({
+        first_name: trimmed,
         student: { first_name: trimmed },
       })
       if (res.success) showToast('First name updated successfully!', 'Account Updated')
     } else if (key === 'lastName') {
       res = await updateUserProfile({
+        last_name: trimmed,
         student: { last_name: trimmed },
       })
       if (res.success) showToast('Last name updated successfully!', 'Account Updated')

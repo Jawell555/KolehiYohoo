@@ -59,7 +59,7 @@ class AdminController extends Controller
         //     ? $request->temp_password
         //     : Str::random(12);
 
-        DB::transaction(function () use ($institution, $tempPassword) {
+        DB::transaction(function () use ($institution) {
             // 1. Mark institution as approved
             $institution->is_approved = true;
             $institution->save();

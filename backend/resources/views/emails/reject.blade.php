@@ -16,6 +16,7 @@
         <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 14px 18px; margin: 0 0 16px 0; border-radius: 4px;">
             <p style="margin: 0 0 4px 0; color: #991b1b; font-weight: bold;">Reason for Decision:</p>
             <p style="margin: 0; color: #7f1d1d;">{{ $reason }}</p>
+            <p style="margin: 0 0 4px 0; color: #991b1b; font-weight: bold;">NOTE: Your account has now been deleted.</p>
         </div>
 
         <p style="margin: 0 0 16px 0;">If you believe this decision was reached in error or would like to submit updated information regarding your institution, you are welcome to submit a new verification request or contact our team.</p>

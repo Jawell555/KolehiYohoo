@@ -21,7 +21,7 @@ class ApproveMail extends Mailable implements ShouldQueue
         public string $repName,
         public string $schoolName,
         public string $email,
-        public string $temp_password,
+        // public string $temp_password,
     ) {
     }
 

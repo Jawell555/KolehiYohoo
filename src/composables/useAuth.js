@@ -438,6 +438,8 @@ export function useAuth() {
       if (token) {
         try {
           const payload = {}
+          if (newData.first_name !== undefined) payload.first_name = newData.first_name
+          if (newData.last_name !== undefined) payload.last_name = newData.last_name
           if (newData.email !== undefined) payload.email = newData.email
           if (newData.phone !== undefined) payload.contact_no = newData.phone
           if (newData.student) {
@@ -467,6 +469,10 @@ export function useAuth() {
                 ...currentUser.value?.student,
                 ...data.user.student,
               },
+              admin: {
+                ...currentUser.value?.admin,
+                ...data.user.admin,
+              }
             }
             if (data.user.student?.first_name || data.user.student?.last_name) {
               const fName = data.user.student?.first_name || currentUser.value?.student?.first_name || ''
